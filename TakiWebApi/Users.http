@@ -1,0 +1,31 @@
+@base_url = https://localhost:7000/api
+
+### Get all users
+GET {{base_url}}/users
+
+### Get user by ID
+GET {{base_url}}/users/1
+
+### Get user by phone number
+GET {{base_url}}/users/phone/1234567890
+
+### Get user by email
+GET {{base_url}}/users/email/user@example.com
+
+### Get active users only
+GET {{base_url}}/users/active
+
+### Get users with pagination
+GET {{base_url}}/users/paginated?pageNumber=1&pageSize=10
+
+### Get total users count
+GET {{base_url}}/users/count
+
+### Get active users count
+GET {{base_url}}/users/active/count
+
+### Search users by name
+GET {{base_url}}/users/search?searchTerm=John
+
+### Get users by date range
+GET {{base_url}}/users/date-range?startDate=2024-01-01&endDate=2024-12-31

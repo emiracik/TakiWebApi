@@ -1,0 +1,6 @@
+@TakiWebApi_HostAddress = http://localhost:5086
+
+GET {{TakiWebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

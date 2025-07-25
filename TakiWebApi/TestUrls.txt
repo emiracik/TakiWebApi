@@ -1,0 +1,178 @@
+TaksiWebApi - All Test URLs
+==============================
+
+Base URLs:
+- HTTPS: https://localhost:5001
+- HTTP: http://localhost:5086
+
+===========================================
+USERS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/users
+GET https://localhost:5001/api/users/1
+GET https://localhost:5001/api/users/phone/+1234567890
+GET https://localhost:5001/api/users/email/user@example.com
+GET https://localhost:5001/api/users/active
+GET https://localhost:5001/api/users/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/users/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/users/count
+GET https://localhost:5001/api/users/active/count
+GET https://localhost:5001/api/users/search?searchTerm=John
+GET https://localhost:5001/api/users/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+===========================================
+DRIVERS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/drivers
+GET https://localhost:5001/api/drivers/1
+GET https://localhost:5001/api/drivers/phone/+1234567890
+GET https://localhost:5001/api/drivers/email/driver@example.com
+GET https://localhost:5001/api/drivers/active
+GET https://localhost:5001/api/drivers/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/drivers/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/drivers/count
+GET https://localhost:5001/api/drivers/active/count
+GET https://localhost:5001/api/drivers/search?searchTerm=John
+GET https://localhost:5001/api/drivers/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET https://localhost:5001/api/drivers/vehicle-plate/ABC123
+GET https://localhost:5001/api/drivers/vehicle-plate/34
+
+===========================================
+TRIPS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/trips
+GET https://localhost:5001/api/trips/1
+GET https://localhost:5001/api/trips/passenger/1
+GET https://localhost:5001/api/trips/passenger/2
+GET https://localhost:5001/api/trips/driver/1
+GET https://localhost:5001/api/trips/driver/2
+GET https://localhost:5001/api/trips/active
+GET https://localhost:5001/api/trips/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/trips/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/trips/count
+GET https://localhost:5001/api/trips/active/count
+GET https://localhost:5001/api/trips/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET https://localhost:5001/api/trips/date-range?startDate=2025-01-01&endDate=2025-07-25
+GET https://localhost:5001/api/trips/payment-method/Credit Card
+GET https://localhost:5001/api/trips/payment-method/Cash
+GET https://localhost:5001/api/trips/payment-method/Debit Card
+GET https://localhost:5001/api/trips/cost/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET https://localhost:5001/api/trips/cost/date-range?startDate=2025-01-01&endDate=2025-07-25
+
+===========================================
+ANNOUNCEMENTS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/announcements
+GET https://localhost:5001/api/announcements/1
+GET https://localhost:5001/api/announcements/active
+GET https://localhost:5001/api/announcements/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/announcements/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/announcements/count
+GET https://localhost:5001/api/announcements/active/count
+GET https://localhost:5001/api/announcements/search?searchTerm=news
+GET https://localhost:5001/api/announcements/search?searchTerm=update
+GET https://localhost:5001/api/announcements/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET https://localhost:5001/api/announcements/date-range?startDate=2025-01-01&endDate=2025-07-25
+
+===========================================
+BLOGS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/blogs
+GET https://localhost:5001/api/blogs/1
+GET https://localhost:5001/api/blogs/published
+GET https://localhost:5001/api/blogs/active
+GET https://localhost:5001/api/blogs/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/blogs/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/blogs/count
+GET https://localhost:5001/api/blogs/published/count
+GET https://localhost:5001/api/blogs/search?searchTerm=technology
+GET https://localhost:5001/api/blogs/search?searchTerm=tutorial
+GET https://localhost:5001/api/blogs/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET https://localhost:5001/api/blogs/date-range?startDate=2025-01-01&endDate=2025-07-25
+
+===========================================
+FAQs ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/faqs
+GET https://localhost:5001/api/faqs/1
+GET https://localhost:5001/api/faqs/active
+GET https://localhost:5001/api/faqs/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/faqs/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/faqs/count
+GET https://localhost:5001/api/faqs/active/count
+GET https://localhost:5001/api/faqs/search?searchTerm=help
+GET https://localhost:5001/api/faqs/search?searchTerm=how
+GET https://localhost:5001/api/faqs/search?searchTerm=payment
+
+===========================================
+ALTERNATIVE HTTP URLS (Port 5086)
+===========================================
+
+Replace https://localhost:5001 with http://localhost:5086 for any of the above URLs.
+
+Examples:
+http://localhost:5086/api/users
+http://localhost:5086/api/drivers
+http://localhost:5086/api/trips
+http://localhost:5086/api/announcements
+http://localhost:5086/api/blogs
+http://localhost:5086/api/faqs
+
+===========================================
+QUICK TEST COMMANDS (curl examples)
+===========================================
+
+curl https://localhost:5001/api/users
+curl https://localhost:5001/api/drivers
+curl https://localhost:5001/api/trips
+curl https://localhost:5001/api/announcements
+curl https://localhost:5001/api/blogs
+curl https://localhost:5001/api/faqs
+
+===========================================
+REPOSITORY STATUS
+===========================================
+
+✅ Users - Complete (Repository + Controller)
+✅ Drivers - Complete (Repository + Controller)
+✅ Trips - Complete (Repository + Controller)
+✅ Announcements - Complete (Repository + Controller)
+✅ Blogs - Complete (Repository + Controller)
+✅ FAQs - Complete (Repository + Controller)
+
+Remaining models for future implementation:
+- Admin
+- AdminRole
+- AnnouncementRead
+- AppVersion
+- DriverDetail
+- DriverEarning
+- DriverRating
+- DriverReview
+- Notification
+- OtpRequest
+- Promotion
+- SmsLog
+- SupportTicket
+- UserAddress
+- UserCreditCard
+- UserNotificationSetting
+
+===========================================
+TESTING NOTES
+===========================================
+
+1. Make sure TaksiWebApi is running before testing
+2. Database connection should be successful
+3. All endpoints return JSON data
+4. Use tools like Postman, curl, or VS Code REST Client
+5. Check Console output for any errors
+6. Pagination starts from pageNumber=1
+7. Search terms are case-insensitive
+8. Date format: YYYY-MM-DD

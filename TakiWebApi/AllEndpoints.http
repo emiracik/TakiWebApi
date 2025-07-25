@@ -1,0 +1,178 @@
+### TaksiWebApi All Endpoints Testing
+@baseUrl = https://localhost:5001
+
+# ===========================================
+# USERS ENDPOINTS
+# ===========================================
+
+### Get all users
+GET {{baseUrl}}/api/users
+
+### Get user by ID
+GET {{baseUrl}}/api/users/1
+
+### Get user by phone
+GET {{baseUrl}}/api/users/phone/+1234567890
+
+### Get user by email
+GET {{baseUrl}}/api/users/email/user@example.com
+
+### Get active users
+GET {{baseUrl}}/api/users/active
+
+### Get users paginated
+GET {{baseUrl}}/api/users/paginated?pageNumber=1&pageSize=5
+
+### Get users count
+GET {{baseUrl}}/api/users/count
+
+### Search users
+GET {{baseUrl}}/api/users/search?searchTerm=John
+
+# ===========================================
+# DRIVERS ENDPOINTS
+# ===========================================
+
+### Get all drivers
+GET {{baseUrl}}/api/drivers
+
+### Get driver by ID
+GET {{baseUrl}}/api/drivers/1
+
+### Get driver by phone
+GET {{baseUrl}}/api/drivers/phone/+1234567890
+
+### Get driver by email
+GET {{baseUrl}}/api/drivers/email/driver@example.com
+
+### Get active drivers
+GET {{baseUrl}}/api/drivers/active
+
+### Get drivers paginated
+GET {{baseUrl}}/api/drivers/paginated?pageNumber=1&pageSize=5
+
+### Get drivers count
+GET {{baseUrl}}/api/drivers/count
+
+### Search drivers
+GET {{baseUrl}}/api/drivers/search?searchTerm=John
+
+### Get drivers by vehicle plate
+GET {{baseUrl}}/api/drivers/vehicle-plate/ABC123
+
+# ===========================================
+# TRIPS ENDPOINTS
+# ===========================================
+
+### Get all trips
+GET {{baseUrl}}/api/trips
+
+### Get trip by ID
+GET {{baseUrl}}/api/trips/1
+
+### Get trips by passenger
+GET {{baseUrl}}/api/trips/passenger/1
+
+### Get trips by driver
+GET {{baseUrl}}/api/trips/driver/1
+
+### Get active trips
+GET {{baseUrl}}/api/trips/active
+
+### Get trips paginated
+GET {{baseUrl}}/api/trips/paginated?pageNumber=1&pageSize=5
+
+### Get trips count
+GET {{baseUrl}}/api/trips/count
+
+### Get trips by date range
+GET {{baseUrl}}/api/trips/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+### Get trips by payment method
+GET {{baseUrl}}/api/trips/payment-method/Credit Card
+
+### Get total cost by date range
+GET {{baseUrl}}/api/trips/cost/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+# ===========================================
+# ANNOUNCEMENTS ENDPOINTS
+# ===========================================
+
+### Get all announcements
+GET {{baseUrl}}/api/announcements
+
+### Get announcement by ID
+GET {{baseUrl}}/api/announcements/1
+
+### Get active announcements
+GET {{baseUrl}}/api/announcements/active
+
+### Get announcements paginated
+GET {{baseUrl}}/api/announcements/paginated?pageNumber=1&pageSize=5
+
+### Get announcements count
+GET {{baseUrl}}/api/announcements/count
+
+### Search announcements
+GET {{baseUrl}}/api/announcements/search?searchTerm=news
+
+### Get announcements by date range
+GET {{baseUrl}}/api/announcements/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+# ===========================================
+# BLOGS ENDPOINTS
+# ===========================================
+
+### Get all blogs
+GET {{baseUrl}}/api/blogs
+
+### Get blog by ID
+GET {{baseUrl}}/api/blogs/1
+
+### Get published blogs
+GET {{baseUrl}}/api/blogs/published
+
+### Get active blogs
+GET {{baseUrl}}/api/blogs/active
+
+### Get blogs paginated
+GET {{baseUrl}}/api/blogs/paginated?pageNumber=1&pageSize=5
+
+### Get blogs count
+GET {{baseUrl}}/api/blogs/count
+
+### Get published blogs count
+GET {{baseUrl}}/api/blogs/published/count
+
+### Search blogs
+GET {{baseUrl}}/api/blogs/search?searchTerm=technology
+
+### Get blogs by date range
+GET {{baseUrl}}/api/blogs/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+# ===========================================
+# FAQs ENDPOINTS
+# ===========================================
+
+### Get all FAQs
+GET {{baseUrl}}/api/faqs
+
+### Get FAQ by ID
+GET {{baseUrl}}/api/faqs/1
+
+### Get active FAQs
+GET {{baseUrl}}/api/faqs/active
+
+### Get FAQs paginated
+GET {{baseUrl}}/api/faqs/paginated?pageNumber=1&pageSize=5
+
+### Get FAQs count
+GET {{baseUrl}}/api/faqs/count
+
+### Get active FAQs count
+GET {{baseUrl}}/api/faqs/active/count
+
+### Search FAQs
+GET {{baseUrl}}/api/faqs/search?searchTerm=help
+
+###

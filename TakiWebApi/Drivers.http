@@ -1,0 +1,57 @@
+### TaksiWebApi Drivers Testing
+@baseUrl = https://localhost:7050
+
+### Get all drivers
+GET {{baseUrl}}/api/drivers
+
+###
+
+### Get driver by ID
+GET {{baseUrl}}/api/drivers/1
+
+###
+
+### Get driver by phone number
+GET {{baseUrl}}/api/drivers/phone/+1234567890
+
+###
+
+### Get driver by email
+GET {{baseUrl}}/api/drivers/email/driver@example.com
+
+###
+
+### Get active drivers
+GET {{baseUrl}}/api/drivers/active
+
+###
+
+### Get drivers paginated
+GET {{baseUrl}}/api/drivers/paginated?pageNumber=1&pageSize=5
+
+###
+
+### Get total drivers count
+GET {{baseUrl}}/api/drivers/count
+
+###
+
+### Get active drivers count
+GET {{baseUrl}}/api/drivers/active/count
+
+###
+
+### Search drivers by name
+GET {{baseUrl}}/api/drivers/search?searchTerm=John
+
+###
+
+### Get drivers by date range
+GET {{baseUrl}}/api/drivers/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+###
+
+### Get drivers by vehicle plate
+GET {{baseUrl}}/api/drivers/vehicle-plate/ABC123
+
+###
