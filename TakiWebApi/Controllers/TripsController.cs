@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
+using TakiWebApi.Services;
 
 namespace TakiWebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TripsController : ControllerBase
 {
     private readonly ITripRepository _tripRepository;
+    private readonly IJwtService _jwtService;
 
-    public TripsController(ITripRepository tripRepository)
+    public TripsController(ITripRepository tripRepository, IJwtService jwtService)
     {
         _tripRepository = tripRepository;
+        _jwtService = jwtService;
     }
 
     [HttpGet]

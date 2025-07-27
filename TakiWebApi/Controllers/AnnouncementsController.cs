@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
+using TakiWebApi.Services;
 
 namespace TakiWebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AnnouncementsController : ControllerBase
 {
     private readonly IAnnouncementRepository _announcementRepository;
+    private readonly IJwtService _jwtService;
 
-    public AnnouncementsController(IAnnouncementRepository announcementRepository)
+    public AnnouncementsController(IAnnouncementRepository announcementRepository, IJwtService jwtService)
     {
         _announcementRepository = announcementRepository;
+        _jwtService = jwtService;
     }
 
     [HttpGet]

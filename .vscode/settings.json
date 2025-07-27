@@ -1,0 +1,4 @@
+{
+    "discord.lowerDetailsEditing": "{total_lines} in {current_line}",
+    "discord.lowerDetailsDebugging": "{file_name}"
+}

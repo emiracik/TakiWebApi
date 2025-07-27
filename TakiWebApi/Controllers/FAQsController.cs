@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
+using TakiWebApi.Services;
 
 namespace TakiWebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class FAQsController : ControllerBase
 {
     private readonly IFAQRepository _faqRepository;
+    private readonly IJwtService _jwtService;
 
-    public FAQsController(IFAQRepository faqRepository)
+    public FAQsController(IFAQRepository faqRepository, IJwtService jwtService)
     {
         _faqRepository = faqRepository;
+        _jwtService = jwtService;
     }
 
     [HttpGet]

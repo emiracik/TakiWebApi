@@ -20,6 +20,9 @@ public class User
     [StringLength(200)]
     public string? Email { get; set; }
 
+    [StringLength(255)]
+    public string? PasswordHash { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public int? CreatedBy { get; set; }

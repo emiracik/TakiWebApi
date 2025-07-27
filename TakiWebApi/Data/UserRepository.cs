@@ -62,19 +62,16 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetUserByPhoneNumberAsync(string phoneNumber)
     {
-        const string sql = @"
-            SELECT UserID, FullName, PhoneNumber, Email, IsActive, CreatedBy, CreatedDate, 
-                   UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Users
-            WHERE PhoneNumber = @PhoneNumber";
-
         using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
+        await connection.OpenAsync();
+
+        string query = "SELECT UserID, FullName, PhoneNumber, Email, IsActive, CreatedDate, IsDeleted, PasswordHash FROM Users WHERE PhoneNumber = @PhoneNumber";
+        
+        using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@PhoneNumber", phoneNumber);
 
-        await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
-
+        
         if (await reader.ReadAsync())
         {
             return MapUserFromReader(reader);
@@ -243,13 +240,88 @@ public class UserRepository : IUserRepository
             PhoneNumber = reader.GetString("PhoneNumber"),
             Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
             IsActive = reader.GetBoolean("IsActive"),
-            CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
             CreatedDate = reader.GetDateTime("CreatedDate"),
-            UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
-            UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
-            DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
-            DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
-            IsDeleted = reader.GetBoolean("IsDeleted")
+            IsDeleted = reader.GetBoolean("IsDeleted"),
+            PasswordHash = HasColumn(reader, "PasswordHash") && !reader.IsDBNull(reader.GetOrdinal("PasswordHash"))
+                ? reader.GetString(reader.GetOrdinal("PasswordHash"))
+                : null
         };
+    }
+
+    private static bool HasColumn(SqlDataReader reader, string columnName)
+    {
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    public async Task<int> CreateUserAsync(User user)
+    {
+        const string sql = @"
+            INSERT INTO Users (FullName, PhoneNumber, Email, IsActive, CreatedDate, IsDeleted)
+            VALUES (@FullName, @PhoneNumber, @Email, @IsActive, @CreatedDate, @IsDeleted);
+            SELECT CAST(SCOPE_IDENTITY() as int);";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@FullName", user.FullName ?? string.Empty);
+        command.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber ?? string.Empty);
+        command.Parameters.AddWithValue("@Email", user.Email ?? string.Empty);
+        command.Parameters.AddWithValue("@IsActive", user.IsActive);
+        command.Parameters.AddWithValue("@CreatedDate", user.CreatedDate);
+        command.Parameters.AddWithValue("@IsDeleted", user.IsDeleted);
+
+        await connection.OpenAsync();
+        var newUserId = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(newUserId);
+    }
+
+    public async Task<bool> UpdateUserAsync(User user)
+    {
+        const string sql = @"
+            UPDATE Users 
+            SET FullName = @FullName, 
+                PhoneNumber = @PhoneNumber, 
+                Email = @Email, 
+                IsActive = @IsActive,
+                UpdatedDate = @UpdatedDate
+            WHERE UserID = @UserID";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@UserID", user.UserID);
+        command.Parameters.AddWithValue("@FullName", user.FullName ?? string.Empty);
+        command.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber ?? string.Empty);
+        command.Parameters.AddWithValue("@Email", user.Email ?? string.Empty);
+        command.Parameters.AddWithValue("@IsActive", user.IsActive);
+        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> DeleteUserAsync(int userId)
+    {
+        const string sql = @"
+            UPDATE Users 
+            SET IsDeleted = 1, 
+                DeletedDate = @DeletedDate
+            WHERE UserID = @UserID";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@UserID", userId);
+        command.Parameters.AddWithValue("@DeletedDate", DateTime.UtcNow);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
     }
 }

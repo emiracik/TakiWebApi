@@ -70,3 +70,7 @@ C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\runtimes\
 C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
+C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\obj\Debug\net9.0\TakiWebApi.sourcelink.json
+C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\TakiWebApi.postman_collection.json
+C:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi\bin\Debug\net9.0\TakiWebApi.postman_environment.json

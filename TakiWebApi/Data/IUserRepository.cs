@@ -14,4 +14,7 @@ public interface IUserRepository
     Task<int> GetActiveUsersCountAsync();
     Task<IEnumerable<User>> SearchUsersByNameAsync(string searchTerm);
     Task<IEnumerable<User>> GetUsersByCreatedDateRangeAsync(DateTime startDate, DateTime endDate);
+    Task<int> CreateUserAsync(User user);
+    Task<bool> UpdateUserAsync(User user);
+    Task<bool> DeleteUserAsync(int userId);
 }

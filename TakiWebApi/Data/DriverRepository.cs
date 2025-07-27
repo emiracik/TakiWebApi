@@ -18,7 +18,7 @@ public class DriverRepository : IDriverRepository
     {
         var drivers = new List<Driver>();
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             ORDER BY CreatedDate DESC";
@@ -40,7 +40,7 @@ public class DriverRepository : IDriverRepository
     public async Task<Driver?> GetDriverByIdAsync(int driverId)
     {
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE DriverID = @DriverId";
@@ -110,7 +110,7 @@ public class DriverRepository : IDriverRepository
     {
         var drivers = new List<Driver>();
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE IsDeleted = 0
@@ -266,6 +266,7 @@ public class DriverRepository : IDriverRepository
             FullName = reader.GetString("FullName"),
             PhoneNumber = reader.GetString("PhoneNumber"),
             Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
+            PasswordHash = reader.IsDBNull("PasswordHash") ? null : reader.GetString("PasswordHash"),
             VehiclePlate = reader.IsDBNull("VehiclePlate") ? null : reader.GetString("VehiclePlate"),
             VehicleModel = reader.IsDBNull("VehicleModel") ? null : reader.GetString("VehicleModel"),
             VehicleColor = reader.IsDBNull("VehicleColor") ? null : reader.GetString("VehicleColor"),
@@ -277,5 +278,94 @@ public class DriverRepository : IDriverRepository
             DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
             IsDeleted = reader.GetBoolean("IsDeleted")
         };
+    }
+
+    public async Task<Driver> AddDriverAsync(Driver driver)
+    {
+        const string sql = @"
+            INSERT INTO Drivers (FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor, CreatedDate, IsDeleted)
+            OUTPUT INSERTED.DriverID, INSERTED.FullName, INSERTED.PhoneNumber, INSERTED.Email, INSERTED.PasswordHash,
+                   INSERTED.VehiclePlate, INSERTED.VehicleModel, INSERTED.VehicleColor, INSERTED.CreatedBy, INSERTED.CreatedDate,
+                   INSERTED.UpdatedBy, INSERTED.UpdatedDate, INSERTED.DeletedBy, INSERTED.DeletedDate, INSERTED.IsDeleted
+            VALUES (@FullName, @PhoneNumber, @Email, @PasswordHash, @VehiclePlate, @VehicleModel, @VehicleColor, @CreatedDate, @IsDeleted)";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@FullName", driver.FullName);
+        command.Parameters.AddWithValue("@PhoneNumber", driver.PhoneNumber);
+        command.Parameters.AddWithValue("@Email", (object?)driver.Email ?? DBNull.Value);
+        command.Parameters.AddWithValue("@PasswordHash", (object?)driver.PasswordHash ?? DBNull.Value);
+        command.Parameters.AddWithValue("@VehiclePlate", (object?)driver.VehiclePlate ?? DBNull.Value);
+        command.Parameters.AddWithValue("@VehicleModel", (object?)driver.VehicleModel ?? DBNull.Value);
+        command.Parameters.AddWithValue("@VehicleColor", (object?)driver.VehicleColor ?? DBNull.Value);
+        command.Parameters.AddWithValue("@CreatedDate", driver.CreatedDate);
+        command.Parameters.AddWithValue("@IsDeleted", driver.IsDeleted);
+
+        await connection.OpenAsync();
+        using var reader = await command.ExecuteReaderAsync();
+        
+        if (await reader.ReadAsync())
+        {
+            return MapDriverFromReader(reader);
+        }
+        
+        throw new InvalidOperationException("Failed to create driver");
+    }
+
+    public async Task<Driver> UpdateDriverAsync(Driver driver)
+    {
+        const string sql = @"
+            UPDATE Drivers 
+            SET FullName = @FullName, PhoneNumber = @PhoneNumber, Email = @Email, PasswordHash = @PasswordHash,
+                VehiclePlate = @VehiclePlate, VehicleModel = @VehicleModel, VehicleColor = @VehicleColor,
+                UpdatedDate = @UpdatedDate, IsDeleted = @IsDeleted
+            OUTPUT INSERTED.DriverID, INSERTED.FullName, INSERTED.PhoneNumber, INSERTED.Email, INSERTED.PasswordHash,
+                   INSERTED.VehiclePlate, INSERTED.VehicleModel, INSERTED.VehicleColor, INSERTED.CreatedBy, INSERTED.CreatedDate,
+                   INSERTED.UpdatedBy, INSERTED.UpdatedDate, INSERTED.DeletedBy, INSERTED.DeletedDate, INSERTED.IsDeleted
+            WHERE DriverID = @DriverID";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@DriverID", driver.DriverID);
+        command.Parameters.AddWithValue("@FullName", driver.FullName);
+        command.Parameters.AddWithValue("@PhoneNumber", driver.PhoneNumber);
+        command.Parameters.AddWithValue("@Email", (object?)driver.Email ?? DBNull.Value);
+        command.Parameters.AddWithValue("@PasswordHash", (object?)driver.PasswordHash ?? DBNull.Value);
+        command.Parameters.AddWithValue("@VehiclePlate", (object?)driver.VehiclePlate ?? DBNull.Value);
+        command.Parameters.AddWithValue("@VehicleModel", (object?)driver.VehicleModel ?? DBNull.Value);
+        command.Parameters.AddWithValue("@VehicleColor", (object?)driver.VehicleColor ?? DBNull.Value);
+        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@IsDeleted", driver.IsDeleted);
+
+        await connection.OpenAsync();
+        using var reader = await command.ExecuteReaderAsync();
+        
+        if (await reader.ReadAsync())
+        {
+            return MapDriverFromReader(reader);
+        }
+        
+        throw new InvalidOperationException("Failed to update driver");
+    }
+
+    public async Task<bool> DeleteDriverAsync(int driverId)
+    {
+        const string sql = @"
+            UPDATE Drivers 
+            SET IsDeleted = 1, DeletedDate = @DeletedDate
+            WHERE DriverID = @DriverID";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.AddWithValue("@DriverID", driverId);
+        command.Parameters.AddWithValue("@DeletedDate", DateTime.UtcNow);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        
+        return rowsAffected > 0;
     }
 }

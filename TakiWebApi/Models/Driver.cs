@@ -20,6 +20,9 @@ public class Driver
     [StringLength(200)]
     public string? Email { get; set; }
 
+    [StringLength(255)]
+    public string? PasswordHash { get; set; }
+
     [StringLength(20)]
     public string? VehiclePlate { get; set; }
 

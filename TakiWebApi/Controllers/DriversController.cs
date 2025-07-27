@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
+using TakiWebApi.Services;
 
 namespace TakiWebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class DriversController : ControllerBase
 {
     private readonly IDriverRepository _driverRepository;
+    private readonly IJwtService _jwtService;
 
-    public DriversController(IDriverRepository driverRepository)
+    public DriversController(IDriverRepository driverRepository, IJwtService jwtService)
     {
         _driverRepository = driverRepository;
+        _jwtService = jwtService;
     }
 
     [HttpGet]

@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
+using TakiWebApi.Services;
 
 namespace TakiWebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class BlogsController : ControllerBase
 {
     private readonly IBlogRepository _blogRepository;
+    private readonly IJwtService _jwtService;
 
-    public BlogsController(IBlogRepository blogRepository)
+    public BlogsController(IBlogRepository blogRepository, IJwtService jwtService)
     {
         _blogRepository = blogRepository;
+        _jwtService = jwtService;
     }
 
     [HttpGet]

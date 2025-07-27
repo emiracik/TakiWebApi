@@ -15,4 +15,7 @@ public interface IDriverRepository
     Task<IEnumerable<Driver>> SearchDriversByNameAsync(string searchTerm);
     Task<IEnumerable<Driver>> GetDriversByCreatedDateRangeAsync(DateTime startDate, DateTime endDate);
     Task<IEnumerable<Driver>> GetDriversByVehiclePlateAsync(string vehiclePlate);
+    Task<Driver> AddDriverAsync(Driver driver);
+    Task<Driver> UpdateDriverAsync(Driver driver);
+    Task<bool> DeleteDriverAsync(int driverId);
 }
