@@ -129,6 +129,71 @@ GET https://localhost:5001/api/usercreditcards/date-range?startDate=2024-01-01&e
 GET https://localhost:5001/api/usercreditcards/date-range?startDate=2025-01-01&endDate=2025-07-25
 
 ===========================================
+USER ADDRESSES ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/useraddresses
+GET https://localhost:5001/api/useraddresses/1
+GET https://localhost:5001/api/useraddresses/user/1
+GET https://localhost:5001/api/useraddresses/user/2
+GET https://localhost:5001/api/useraddresses/active
+GET https://localhost:5001/api/useraddresses/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/useraddresses/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/useraddresses/count
+GET https://localhost:5001/api/useraddresses/active/count
+GET https://localhost:5001/api/useraddresses/search?searchTerm=Home
+GET https://localhost:5001/api/useraddresses/search?searchTerm=Work
+GET https://localhost:5001/api/useraddresses/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+===========================================
+NOTIFICATIONS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/notifications
+GET https://localhost:5001/api/notifications/1
+GET https://localhost:5001/api/notifications/user/1
+GET https://localhost:5001/api/notifications/user/1/unread
+GET https://localhost:5001/api/notifications/user/1/unread/count
+GET https://localhost:5001/api/notifications/active
+GET https://localhost:5001/api/notifications/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/notifications/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/notifications/count
+GET https://localhost:5001/api/notifications/active/count
+GET https://localhost:5001/api/notifications/search?searchTerm=welcome
+GET https://localhost:5001/api/notifications/date-range?startDate=2024-01-01&endDate=2024-12-31
+PUT https://localhost:5001/api/notifications/1/mark-as-read
+PUT https://localhost:5001/api/notifications/user/1/mark-all-as-read
+
+===========================================
+DRIVER RATINGS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/driverratings
+GET https://localhost:5001/api/driverratings/1
+GET https://localhost:5001/api/driverratings/driver/1
+GET https://localhost:5001/api/driverratings/driver/1/average
+GET https://localhost:5001/api/driverratings/user/1
+GET https://localhost:5001/api/driverratings/trip/1
+GET https://localhost:5001/api/driverratings/rating/5
+GET https://localhost:5001/api/driverratings/active
+GET https://localhost:5001/api/driverratings/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/driverratings/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/driverratings/count
+GET https://localhost:5001/api/driverratings/active/count
+GET https://localhost:5001/api/driverratings/date-range?startDate=2024-01-01&endDate=2024-12-31
+
+===========================================
+USER NOTIFICATION SETTINGS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/usernotificationsettings
+GET https://localhost:5001/api/usernotificationsettings/1
+GET https://localhost:5001/api/usernotificationsettings/user/1
+GET https://localhost:5001/api/usernotificationsettings/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/usernotificationsettings/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/usernotificationsettings/count
+
+===========================================
 ALTERNATIVE HTTP URLS (Port 5086)
 ===========================================
 
@@ -141,6 +206,11 @@ http://localhost:5086/api/trips
 http://localhost:5086/api/announcements
 http://localhost:5086/api/blogs
 http://localhost:5086/api/faqs
+http://localhost:5086/api/usercreditcards
+http://localhost:5086/api/useraddresses
+http://localhost:5086/api/notifications
+http://localhost:5086/api/driverratings
+http://localhost:5086/api/usernotificationsettings
 
 ===========================================
 QUICK TEST COMMANDS (curl examples)
@@ -152,6 +222,11 @@ curl https://localhost:5001/api/trips
 curl https://localhost:5001/api/announcements
 curl https://localhost:5001/api/blogs
 curl https://localhost:5001/api/faqs
+curl https://localhost:5001/api/usercreditcards
+curl https://localhost:5001/api/useraddresses
+curl https://localhost:5001/api/notifications
+curl https://localhost:5001/api/driverratings
+curl https://localhost:5001/api/usernotificationsettings
 
 ===========================================
 REPOSITORY STATUS
@@ -163,6 +238,11 @@ REPOSITORY STATUS
 ✅ Announcements - Complete (Repository + Controller)
 ✅ Blogs - Complete (Repository + Controller)
 ✅ FAQs - Complete (Repository + Controller)
+✅ UserCreditCards - Complete (Repository + Controller)
+✅ UserAddresses - Complete (Repository + Controller)
+✅ Notifications - Complete (Repository + Controller)
+✅ DriverRatings - Complete (Repository + Controller)
+✅ UserNotificationSettings - Complete (Repository + Controller)
 
 Remaining models for future implementation:
 - Admin

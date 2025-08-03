@@ -549,6 +549,707 @@
 			]
 		},
 		{
+			"name": "User Credit Cards",
+			"item": [
+				{
+					"name": "Get All User Credit Cards",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Credit Card by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Credit Cards by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Credit Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"cardHolderName\": \"John Doe\",\n    \"cardNumberMasked\": \"****-****-****-1234\",\n    \"expiryMonth\": 12,\n    \"expiryYear\": 2025,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Addresses",
+			"item": [
+				{
+					"name": "Get All User Addresses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Address by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Addresses by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"title\": \"Home\",\n    \"addressText\": \"123 Main Street, City Center\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get All Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Notification by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/user/1/unread",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"user",
+								"1",
+								"unread"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/user/1/unread/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"user",
+								"1",
+								"unread",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/1/mark-as-read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"1",
+								"mark-as-read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"title\": \"Welcome!\",\n    \"message\": \"Welcome to TakiWebApi!\",\n    \"isRead\": false,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/Notifications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Driver Ratings",
+			"item": [
+				{
+					"name": "Get All Driver Ratings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Driver Rating by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Driver Ratings by Driver ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/driver/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"driver",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Driver Average Rating",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/driver/1/average",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"driver",
+								"1",
+								"average"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ratings by Rating Value",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/rating/5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"rating",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Driver Rating",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tripID\": 1,\n    \"driverID\": 1,\n    \"userID\": 1,\n    \"rating\": 5,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Notification Settings",
+			"item": [
+				{
+					"name": "Get All User Notification Settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Notification Setting by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Notification Setting by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Notification Setting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"allowPromotions\": true,\n    \"allowTripUpdates\": true,\n    \"allowNews\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Notification Setting",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"settingID\": 1,\n    \"userID\": 1,\n    \"allowPromotions\": false,\n    \"allowTripUpdates\": true,\n    \"allowNews\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Health Checks",
 			"item": [
 				{

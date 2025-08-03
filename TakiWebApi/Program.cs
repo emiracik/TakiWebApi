@@ -62,6 +62,11 @@ builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IBlogRepository, BlogRepository>();
 builder.Services.AddScoped<IFAQRepository, FAQRepository>();
+builder.Services.AddScoped<IUserCreditCardRepository, UserCreditCardRepository>();
+builder.Services.AddScoped<IUserAddressRepository, UserAddressRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IDriverRatingRepository, DriverRatingRepository>();
+builder.Services.AddScoped<IUserNotificationSettingRepository, UserNotificationSettingRepository>();
 
 // Register JWT service
 builder.Services.AddScoped<IJwtService, JwtService>();

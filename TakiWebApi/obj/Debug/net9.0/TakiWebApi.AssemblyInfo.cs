@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TakiWebApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+563f31c0a15955c2d9f9e453c8df53dcf9bde8c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6b621129030363aec13a22f9694fb784a7ac7655")]
 [assembly: System.Reflection.AssemblyProductAttribute("TakiWebApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TakiWebApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
