@@ -111,6 +111,24 @@ GET https://localhost:5001/api/faqs/search?searchTerm=how
 GET https://localhost:5001/api/faqs/search?searchTerm=payment
 
 ===========================================
+USER CREDIT CARDS ENDPOINTS
+===========================================
+
+GET https://localhost:5001/api/usercreditcards
+GET https://localhost:5001/api/usercreditcards/1
+GET https://localhost:5001/api/usercreditcards/user/1
+GET https://localhost:5001/api/usercreditcards/user/2
+GET https://localhost:5001/api/usercreditcards/active
+GET https://localhost:5001/api/usercreditcards/paginated?pageNumber=1&pageSize=5
+GET https://localhost:5001/api/usercreditcards/paginated?pageNumber=2&pageSize=10
+GET https://localhost:5001/api/usercreditcards/count
+GET https://localhost:5001/api/usercreditcards/active/count
+GET https://localhost:5001/api/usercreditcards/search?searchTerm=Visa
+GET https://localhost:5001/api/usercreditcards/search?searchTerm=Master
+GET https://localhost:5001/api/usercreditcards/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET https://localhost:5001/api/usercreditcards/date-range?startDate=2025-01-01&endDate=2025-07-25
+
+===========================================
 ALTERNATIVE HTTP URLS (Port 5086)
 ===========================================
 
@@ -176,3 +194,28 @@ TESTING NOTES
 6. Pagination starts from pageNumber=1
 7. Search terms are case-insensitive
 8. Date format: YYYY-MM-DD
+
+===========================================
+USER CREDIT CARD REPOSITORY INTERFACE
+===========================================
+
+using TakiWebApi.Models;
+
+namespace TakiWebApi.Repositories
+{
+    public interface IUserCreditCardRepository
+    {
+        Task<IEnumerable<UserCreditCard>> GetAllUserCreditCardsAsync();
+        Task<UserCreditCard?> GetUserCreditCardByIdAsync(int cardId);
+        Task<IEnumerable<UserCreditCard>> GetUserCreditCardsByUserIdAsync(int userId);
+        Task<IEnumerable<UserCreditCard>> GetActiveUserCreditCardsAsync();
+        Task<(IEnumerable<UserCreditCard>, int)> GetPaginatedUserCreditCardsAsync(int pageNumber, int pageSize);
+        Task<int> GetUserCreditCardsCountAsync();
+        Task<int> GetActiveUserCreditCardsCountAsync();
+        Task<IEnumerable<UserCreditCard>> SearchUserCreditCardsAsync(string searchTerm);
+        Task<IEnumerable<UserCreditCard>> GetUserCreditCardsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<UserCreditCard> CreateUserCreditCardAsync(UserCreditCard userCreditCard);
+        Task<UserCreditCard?> UpdateUserCreditCardAsync(int cardId, UserCreditCard userCreditCard);
+        Task<bool> DeleteUserCreditCardAsync(int cardId);
+    }
+}
