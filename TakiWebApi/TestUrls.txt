@@ -199,23 +199,3 @@ TESTING NOTES
 USER CREDIT CARD REPOSITORY INTERFACE
 ===========================================
 
-using TakiWebApi.Models;
-
-namespace TakiWebApi.Repositories
-{
-    public interface IUserCreditCardRepository
-    {
-        Task<IEnumerable<UserCreditCard>> GetAllUserCreditCardsAsync();
-        Task<UserCreditCard?> GetUserCreditCardByIdAsync(int cardId);
-        Task<IEnumerable<UserCreditCard>> GetUserCreditCardsByUserIdAsync(int userId);
-        Task<IEnumerable<UserCreditCard>> GetActiveUserCreditCardsAsync();
-        Task<(IEnumerable<UserCreditCard>, int)> GetPaginatedUserCreditCardsAsync(int pageNumber, int pageSize);
-        Task<int> GetUserCreditCardsCountAsync();
-        Task<int> GetActiveUserCreditCardsCountAsync();
-        Task<IEnumerable<UserCreditCard>> SearchUserCreditCardsAsync(string searchTerm);
-        Task<IEnumerable<UserCreditCard>> GetUserCreditCardsByDateRangeAsync(DateTime startDate, DateTime endDate);
-        Task<UserCreditCard> CreateUserCreditCardAsync(UserCreditCard userCreditCard);
-        Task<UserCreditCard?> UpdateUserCreditCardAsync(int cardId, UserCreditCard userCreditCard);
-        Task<bool> DeleteUserCreditCardAsync(int cardId);
-    }
-}
