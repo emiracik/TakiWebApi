@@ -125,7 +125,7 @@ public class UserAddressesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUserAddress(int id, [FromBody] UserAddress userAddress)
     {
-        if (id != userAddress.AddressID)
+        if (id != userAddress.UserAddressID)
         {
             return BadRequest("ID mismatch between route and body.");
         }

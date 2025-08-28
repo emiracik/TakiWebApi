@@ -7,19 +7,24 @@ namespace TakiWebApi.Models;
 public class UserAddress
 {
     [Key]
-    public int AddressID { get; set; }
+    public int UserAddressID { get; set; }
 
     public int? UserID { get; set; }
 
     [StringLength(100)]
-    public string? Title { get; set; }
+    public string? AddressName { get; set; }
 
     [StringLength(500)]
-    public string? AddressText { get; set; }
+    public string? FullAddress { get; set; }
 
     public double? Latitude { get; set; }
 
     public double? Longitude { get; set; }
+
+    public bool IsDefault { get; set; } = false;
+
+    [StringLength(50)]
+    public string? AddressType { get; set; } // Home, Work, Other
 
     public int? CreatedBy { get; set; }
 

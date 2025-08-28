@@ -2,298 +2,413 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using TakiWebApi.Models;
 
-namespace TakiWebApi.Data;
-
-public class UserAddressRepository : IUserAddressRepository
+namespace TakiWebApi.Data
 {
-    private readonly string _connectionString;
-
-    public UserAddressRepository(IConfiguration configuration)
+    public class UserAddressRepository : IUserAddressRepository
     {
-        _connectionString = configuration.GetConnectionString("SqlServerConnection") 
-            ?? throw new ArgumentNullException(nameof(configuration), "Connection string cannot be null");
-    }
+        private readonly string _connectionString;
 
-    public async Task<IEnumerable<UserAddress>> GetAllUserAddressesAsync()
-    {
-        var userAddresses = new List<UserAddress>();
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            ORDER BY CreatedDate DESC";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        public UserAddressRepository(IConfiguration configuration)
         {
-            userAddresses.Add(MapUserAddressFromReader(reader));
+            _connectionString = configuration.GetConnectionString("SqlServerConnection") 
+                ?? throw new ArgumentNullException(nameof(configuration), "Connection string cannot be null");
         }
 
-        return userAddresses;
-    }
-
-    public async Task<UserAddress?> GetUserAddressByIdAsync(int addressId)
-    {
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            WHERE AddressID = @AddressId";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@AddressId", addressId);
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        if (await reader.ReadAsync())
+        public async Task<IEnumerable<UserAddress>> GetAllUserAddressesAsync()
         {
-            return MapUserAddressFromReader(reader);
+            var userAddresses = new List<UserAddress>();
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE IsDeleted = 0
+                ORDER BY CreatedDate DESC";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                userAddresses.Add(new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                });
+            }
+
+            return userAddresses;
         }
 
-        return null;
-    }
-
-    public async Task<IEnumerable<UserAddress>> GetUserAddressesByUserIdAsync(int userId)
-    {
-        var userAddresses = new List<UserAddress>();
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            WHERE UserID = @UserId AND IsDeleted = 0
-            ORDER BY CreatedDate DESC";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@UserId", userId);
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        public async Task<UserAddress?> GetUserAddressByIdAsync(int addressId)
         {
-            userAddresses.Add(MapUserAddressFromReader(reader));
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE UserAddressID = @AddressId AND IsDeleted = 0";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add("@AddressId", SqlDbType.Int).Value = addressId;
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                };
+            }
+
+            return null;
         }
 
-        return userAddresses;
-    }
-
-    public async Task<IEnumerable<UserAddress>> GetActiveUserAddressesAsync()
-    {
-        var userAddresses = new List<UserAddress>();
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            WHERE IsDeleted = 0
-            ORDER BY CreatedDate DESC";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        public async Task<IEnumerable<UserAddress>> GetUserAddressesByUserIdAsync(int userId)
         {
-            userAddresses.Add(MapUserAddressFromReader(reader));
+            var userAddresses = new List<UserAddress>();
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE UserID = @UserId AND IsDeleted = 0
+                ORDER BY IsDefault DESC, CreatedDate DESC";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                userAddresses.Add(new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                });
+            }
+
+            return userAddresses;
         }
 
-        return userAddresses;
-    }
-
-    public async Task<IEnumerable<UserAddress>> GetUserAddressesPaginatedAsync(int pageNumber, int pageSize)
-    {
-        var userAddresses = new List<UserAddress>();
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            ORDER BY CreatedDate DESC
-            OFFSET @Offset ROWS
-            FETCH NEXT @PageSize ROWS ONLY";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@Offset", (pageNumber - 1) * pageSize);
-        command.Parameters.AddWithValue("@PageSize", pageSize);
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        public async Task<IEnumerable<UserAddress>> GetActiveUserAddressesAsync()
         {
-            userAddresses.Add(MapUserAddressFromReader(reader));
+            var userAddresses = new List<UserAddress>();
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE IsDeleted = 0
+                ORDER BY IsDefault DESC, CreatedDate DESC";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                userAddresses.Add(new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                });
+            }
+
+            return userAddresses;
         }
 
-        return userAddresses;
-    }
-
-    public async Task<int> GetTotalUserAddressesCountAsync()
-    {
-        const string sql = "SELECT COUNT(*) FROM UserAddresses";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-
-        await connection.OpenAsync();
-        var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
-    }
-
-    public async Task<int> GetActiveUserAddressesCountAsync()
-    {
-        const string sql = "SELECT COUNT(*) FROM UserAddresses WHERE IsDeleted = 0";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-
-        await connection.OpenAsync();
-        var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
-    }
-
-    public async Task<IEnumerable<UserAddress>> SearchUserAddressesByTitleAsync(string searchTerm)
-    {
-        var userAddresses = new List<UserAddress>();
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            WHERE Title LIKE @SearchTerm OR AddressText LIKE @SearchTerm
-            ORDER BY CreatedDate DESC";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@SearchTerm", $"%{searchTerm}%");
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        public async Task<IEnumerable<UserAddress>> GetUserAddressesPaginatedAsync(int pageNumber, int pageSize)
         {
-            userAddresses.Add(MapUserAddressFromReader(reader));
+            var userAddresses = new List<UserAddress>();
+            var offset = (pageNumber - 1) * pageSize;
+
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE IsDeleted = 0
+                ORDER BY CreatedDate DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add("@Offset", SqlDbType.Int).Value = offset;
+            command.Parameters.Add("@PageSize", SqlDbType.Int).Value = pageSize;
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                userAddresses.Add(new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                });
+            }
+
+            return userAddresses;
         }
 
-        return userAddresses;
-    }
-
-    public async Task<IEnumerable<UserAddress>> GetUserAddressesByCreatedDateRangeAsync(DateTime startDate, DateTime endDate)
-    {
-        var userAddresses = new List<UserAddress>();
-        const string sql = @"
-            SELECT AddressID, UserID, Title, AddressText, Latitude, Longitude,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserAddresses
-            WHERE CreatedDate >= @StartDate AND CreatedDate <= @EndDate
-            ORDER BY CreatedDate DESC";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@StartDate", startDate);
-        command.Parameters.AddWithValue("@EndDate", endDate);
-
-        await connection.OpenAsync();
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        public async Task<int> GetTotalUserAddressesCountAsync()
         {
-            userAddresses.Add(MapUserAddressFromReader(reader));
+            const string sql = "SELECT COUNT(*) FROM UserAddresses WHERE IsDeleted = 0";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync();
+            return result != null ? (int)result : 0;
         }
 
-        return userAddresses;
-    }
-
-    public async Task<int> CreateUserAddressAsync(UserAddress userAddress)
-    {
-        const string sql = @"
-            INSERT INTO UserAddresses (UserID, Title, AddressText, Latitude, Longitude, CreatedBy, CreatedDate, IsDeleted)
-            VALUES (@UserID, @Title, @AddressText, @Latitude, @Longitude, @CreatedBy, @CreatedDate, @IsDeleted);
-            SELECT SCOPE_IDENTITY();";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        
-        command.Parameters.AddWithValue("@UserID", userAddress.UserID ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Title", userAddress.Title ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@AddressText", userAddress.AddressText ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Latitude", userAddress.Latitude ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Longitude", userAddress.Longitude ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@CreatedBy", userAddress.CreatedBy ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@CreatedDate", userAddress.CreatedDate);
-        command.Parameters.AddWithValue("@IsDeleted", userAddress.IsDeleted);
-
-        await connection.OpenAsync();
-        var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
-    }
-
-    public async Task<bool> UpdateUserAddressAsync(UserAddress userAddress)
-    {
-        const string sql = @"
-            UPDATE UserAddresses 
-            SET UserID = @UserID, Title = @Title, AddressText = @AddressText, 
-                Latitude = @Latitude, Longitude = @Longitude, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
-            WHERE AddressID = @AddressID";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        
-        command.Parameters.AddWithValue("@AddressID", userAddress.AddressID);
-        command.Parameters.AddWithValue("@UserID", userAddress.UserID ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Title", userAddress.Title ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@AddressText", userAddress.AddressText ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Latitude", userAddress.Latitude ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Longitude", userAddress.Longitude ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@UpdatedBy", userAddress.UpdatedBy ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@UpdatedDate", userAddress.UpdatedDate ?? (object)DBNull.Value);
-
-        await connection.OpenAsync();
-        var rowsAffected = await command.ExecuteNonQueryAsync();
-        return rowsAffected > 0;
-    }
-
-    public async Task<bool> DeleteUserAddressAsync(int addressId)
-    {
-        const string sql = @"
-            UPDATE UserAddresses 
-            SET IsDeleted = 1, DeletedDate = @DeletedDate 
-            WHERE AddressID = @AddressID";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@AddressID", addressId);
-        command.Parameters.AddWithValue("@DeletedDate", DateTime.UtcNow);
-
-        await connection.OpenAsync();
-        var rowsAffected = await command.ExecuteNonQueryAsync();
-        return rowsAffected > 0;
-    }
-
-    private static UserAddress MapUserAddressFromReader(SqlDataReader reader)
-    {
-        return new UserAddress
+        public async Task<int> GetActiveUserAddressesCountAsync()
         {
-            AddressID = reader.GetInt32("AddressID"),
-            UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
-            Title = reader.IsDBNull("Title") ? null : reader.GetString("Title"),
-            AddressText = reader.IsDBNull("AddressText") ? null : reader.GetString("AddressText"),
-            Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
-            Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
-            CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
-            CreatedDate = reader.GetDateTime("CreatedDate"),
-            UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
-            UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
-            DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
-            DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
-            IsDeleted = reader.GetBoolean("IsDeleted")
-        };
+            const string sql = "SELECT COUNT(*) FROM UserAddresses WHERE IsDeleted = 0";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync();
+            return result != null ? (int)result : 0;
+        }
+
+        public async Task<IEnumerable<UserAddress>> SearchUserAddressesByTitleAsync(string searchTerm)
+        {
+            var userAddresses = new List<UserAddress>();
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE IsDeleted = 0 AND (
+                    AddressName LIKE @SearchTerm OR 
+                    FullAddress LIKE @SearchTerm OR
+                    AddressType LIKE @SearchTerm
+                )
+                ORDER BY CreatedDate DESC";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add("@SearchTerm", SqlDbType.NVarChar, 255).Value = $"%{searchTerm}%";
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                userAddresses.Add(new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                });
+            }
+
+            return userAddresses;
+        }
+
+        public async Task<IEnumerable<UserAddress>> GetUserAddressesByCreatedDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            var userAddresses = new List<UserAddress>();
+            const string sql = @"
+                SELECT UserAddressID, UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType,
+                       CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+                FROM UserAddresses
+                WHERE IsDeleted = 0 AND CreatedDate >= @StartDate AND CreatedDate <= @EndDate
+                ORDER BY CreatedDate DESC";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add("@StartDate", SqlDbType.DateTime).Value = startDate;
+            command.Parameters.Add("@EndDate", SqlDbType.DateTime).Value = endDate;
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                userAddresses.Add(new UserAddress
+                {
+                    UserAddressID = reader.GetInt32("UserAddressID"),
+                    UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+                    AddressName = reader.IsDBNull("AddressName") ? null : reader.GetString("AddressName"),
+                    FullAddress = reader.IsDBNull("FullAddress") ? null : reader.GetString("FullAddress"),
+                    Latitude = reader.IsDBNull("Latitude") ? null : reader.GetDouble("Latitude"),
+                    Longitude = reader.IsDBNull("Longitude") ? null : reader.GetDouble("Longitude"),
+                    IsDefault = reader.GetBoolean("IsDefault"),
+                    AddressType = reader.IsDBNull("AddressType") ? null : reader.GetString("AddressType"),
+                    CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
+                    CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
+                    UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
+                    UpdatedDate = reader.IsDBNull("UpdatedDate") ? null : reader.GetDateTime("UpdatedDate"),
+                    DeletedBy = reader.IsDBNull("DeletedBy") ? null : reader.GetInt32("DeletedBy"),
+                    DeletedDate = reader.IsDBNull("DeletedDate") ? null : reader.GetDateTime("DeletedDate"),
+                    IsDeleted = reader.GetBoolean("IsDeleted")
+                });
+            }
+
+            return userAddresses;
+        }
+
+        public async Task<int> CreateUserAddressAsync(UserAddress userAddress)
+        {
+            const string sql = @"
+                INSERT INTO UserAddresses (UserID, AddressName, FullAddress, Latitude, Longitude, IsDefault, AddressType, CreatedBy, CreatedDate)
+                OUTPUT INSERTED.UserAddressID
+                VALUES (@UserID, @AddressName, @FullAddress, @Latitude, @Longitude, @IsDefault, @AddressType, @CreatedBy, @CreatedDate)";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.Add("@UserID", SqlDbType.Int).Value = (object?)userAddress.UserID ?? DBNull.Value;
+            command.Parameters.Add("@AddressName", SqlDbType.NVarChar, 100).Value = (object?)userAddress.AddressName ?? DBNull.Value;
+            command.Parameters.Add("@FullAddress", SqlDbType.NVarChar, 500).Value = (object?)userAddress.FullAddress ?? DBNull.Value;
+            command.Parameters.Add("@Latitude", SqlDbType.Float).Value = (object?)userAddress.Latitude ?? DBNull.Value;
+            command.Parameters.Add("@Longitude", SqlDbType.Float).Value = (object?)userAddress.Longitude ?? DBNull.Value;
+            command.Parameters.Add("@IsDefault", SqlDbType.Bit).Value = userAddress.IsDefault;
+            command.Parameters.Add("@AddressType", SqlDbType.NVarChar, 50).Value = (object?)userAddress.AddressType ?? DBNull.Value;
+            command.Parameters.Add("@CreatedBy", SqlDbType.Int).Value = (object?)userAddress.CreatedBy ?? DBNull.Value;
+            command.Parameters.Add("@CreatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync();
+            return result != null ? (int)result : 0;
+        }
+
+        public async Task<bool> UpdateUserAddressAsync(UserAddress userAddress)
+        {
+            const string sql = @"
+                UPDATE UserAddresses 
+                SET UserID = @UserID, AddressName = @AddressName, FullAddress = @FullAddress, 
+                    Latitude = @Latitude, Longitude = @Longitude, IsDefault = @IsDefault, 
+                    AddressType = @AddressType, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
+                WHERE UserAddressID = @UserAddressID AND IsDeleted = 0";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.Add("@UserAddressID", SqlDbType.Int).Value = userAddress.UserAddressID;
+            command.Parameters.Add("@UserID", SqlDbType.Int).Value = (object?)userAddress.UserID ?? DBNull.Value;
+            command.Parameters.Add("@AddressName", SqlDbType.NVarChar, 100).Value = (object?)userAddress.AddressName ?? DBNull.Value;
+            command.Parameters.Add("@FullAddress", SqlDbType.NVarChar, 500).Value = (object?)userAddress.FullAddress ?? DBNull.Value;
+            command.Parameters.Add("@Latitude", SqlDbType.Float).Value = (object?)userAddress.Latitude ?? DBNull.Value;
+            command.Parameters.Add("@Longitude", SqlDbType.Float).Value = (object?)userAddress.Longitude ?? DBNull.Value;
+            command.Parameters.Add("@IsDefault", SqlDbType.Bit).Value = userAddress.IsDefault;
+            command.Parameters.Add("@AddressType", SqlDbType.NVarChar, 50).Value = (object?)userAddress.AddressType ?? DBNull.Value;
+            command.Parameters.Add("@UpdatedBy", SqlDbType.Int).Value = (object?)userAddress.UpdatedBy ?? DBNull.Value;
+            command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+
+            await connection.OpenAsync();
+            var rowsAffected = await command.ExecuteNonQueryAsync();
+
+            return rowsAffected > 0;
+        }
+
+        public async Task<bool> DeleteUserAddressAsync(int addressId)
+        {
+            const string sql = @"
+                UPDATE UserAddresses 
+                SET IsDeleted = 1, DeletedDate = @DeletedDate, DeletedBy = @DeletedBy
+                WHERE UserAddressID = @UserAddressID";
+
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.Add("@UserAddressID", SqlDbType.Int).Value = addressId;
+            command.Parameters.Add("@DeletedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+            command.Parameters.Add("@DeletedBy", SqlDbType.Int).Value = DBNull.Value; // Should be set based on current user
+
+            await connection.OpenAsync();
+            var rowsAffected = await command.ExecuteNonQueryAsync();
+
+            return rowsAffected > 0;
+        }
     }
 }

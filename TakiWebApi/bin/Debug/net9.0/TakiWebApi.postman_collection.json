@@ -11,6 +11,7 @@
 			"item": [
 				{
 					"name": "User Login",
+					"description": "[API Docs](https://yourapidocs.com/api/Auth/login)",
 					"event": [
 						{
 							"listen": "test",
@@ -57,6 +58,7 @@
 				},
 				{
 					"name": "Driver Login",
+					"description": "[API Docs](https://yourapidocs.com/api/Auth/driver-login)",
 					"event": [
 						{
 							"listen": "test",
@@ -103,6 +105,7 @@
 				},
 				{
 					"name": "User Registration",
+					"description": "[API Docs](https://yourapidocs.com/api/Auth/register)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -131,6 +134,7 @@
 				},
 				{
 					"name": "Driver Registration",
+					"description": "[API Docs](https://yourapidocs.com/api/Auth/driver-register)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -159,6 +163,7 @@
 				},
 				{
 					"name": "Validate Token",
+					"description": "[API Docs](https://yourapidocs.com/api/Auth/validate)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -192,6 +197,7 @@
 			"item": [
 				{
 					"name": "Get All Users",
+					"description": "[API Docs](https://yourapidocs.com/api/Users)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -215,6 +221,7 @@
 				},
 				{
 					"name": "Get User by ID",
+					"description": "[API Docs](https://yourapidocs.com/api/Users/{id})",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -239,6 +246,7 @@
 				},
 				{
 					"name": "Get User by Phone",
+					"description": "[API Docs](https://yourapidocs.com/api/Users/phone/{phone})",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -501,6 +509,7 @@
 			"item": [
 				{
 					"name": "Get All FAQs",
+					"description": "Endpoint: {{base_url}}/api/FAQs",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -524,6 +533,7 @@
 				},
 				{
 					"name": "Get FAQ by ID",
+					"description": "Endpoint: {{base_url}}/api/FAQs/1",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -540,6 +550,707 @@
 							"path": [
 								"api",
 								"FAQs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Credit Cards",
+			"item": [
+				{
+					"name": "Get All User Credit Cards",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Credit Card by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Credit Cards by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Credit Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"cardHolderName\": \"John Doe\",\n    \"cardNumberMasked\": \"****-****-****-1234\",\n    \"expiryMonth\": 12,\n    \"expiryYear\": 2025,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserCreditCards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserCreditCards"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Addresses",
+			"item": [
+				{
+					"name": "Get All User Addresses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Address by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Addresses by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"title\": \"Home\",\n    \"addressText\": \"123 Main Street, City Center\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserAddresses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserAddresses"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get All Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Notification by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/user/1/unread",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"user",
+								"1",
+								"unread"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/user/1/unread/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"user",
+								"1",
+								"unread",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/Notifications/1/mark-as-read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications",
+								"1",
+								"mark-as-read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"title\": \"Welcome!\",\n    \"message\": \"Welcome to TakiWebApi!\",\n    \"isRead\": false,\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/Notifications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"Notifications"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Driver Ratings",
+			"item": [
+				{
+					"name": "Get All Driver Ratings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Driver Rating by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Driver Ratings by Driver ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/driver/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"driver",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Driver Average Rating",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/driver/1/average",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"driver",
+								"1",
+								"average"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ratings by Rating Value",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings/rating/4.5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings",
+								"rating",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Driver Rating",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tripID\": 1,\n    \"driverID\": 1,\n    \"userID\": 1,\n    \"rating\": 4.5,\n    \"comment\": \"Great driver, very professional!\",\n    \"createdBy\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DriverRatings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DriverRatings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Notification Settings",
+			"item": [
+				{
+					"name": "Get All User Notification Settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Notification Setting by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Notification Setting by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings/user/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings",
+								"user",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Notification Setting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": 1,\n    \"allowPromotions\": true,\n    \"allowTripUpdates\": true,\n    \"allowNews\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Notification Setting",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"settingID\": 1,\n    \"userID\": 1,\n    \"allowPromotions\": false,\n    \"allowTripUpdates\": true,\n    \"allowNews\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/UserNotificationSettings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"UserNotificationSettings",
 								"1"
 							]
 						}
@@ -603,6 +1314,508 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "CreditCards",
+			"item": [
+				{
+					"name": "Get All Credit Cards",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/CreditCards"
+						}
+					}
+				},
+				{
+					"name": "Get Credit Card by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/CreditCards/1"
+						}
+					}
+				},
+				{
+					"name": "Create Credit Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userID\": 1,\n  \"cardNumber\": \"1234567890123456\",\n  \"cardHolder\": \"John Doe\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2027,\n  \"cvc\": \"123\",\n  \"isDefault\": true,\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/CreditCards"
+						}
+					}
+				},
+				{
+					"name": "Update Credit Card",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cardID\": 1,\n  \"userID\": 1,\n  \"cardNumber\": \"1234567890123456\",\n  \"cardHolder\": \"John Doe\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2027,\n  \"cvc\": \"123\",\n  \"isDefault\": true,\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/CreditCards/1"
+						}
+					}
+				},
+				{
+					"name": "Delete Credit Card",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/CreditCards/1"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "WalletTransactions",
+			"item": [
+				{
+					"name": "Get All Wallet Transactions",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/WalletTransactions"
+						}
+					}
+				},
+				{
+					"name": "Get Wallet Transaction by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/WalletTransactions/1"
+						}
+					}
+				},
+				{
+					"name": "Create Wallet Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userID\": 1,\n  \"amount\": 100.00,\n  \"transactionType\": \"Deposit\",\n  \"description\": \"Initial deposit\",\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/WalletTransactions"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoices",
+			"item": [
+				{
+					"name": "Get All Invoices",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/Invoices"
+						}
+					}
+				},
+				{
+					"name": "Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/Invoices/1"
+						}
+					}
+				},
+				{
+					"name": "Create Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userID\": 1,\n  \"tripID\": 1,\n  \"amount\": 50.00,\n  \"invoiceDate\": \"2025-08-12T00:00:00Z\",\n  \"status\": \"Paid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/Invoices"
+						}
+					}
+				},
+				{
+					"name": "Update Invoice",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceID\": 1,\n  \"userID\": 1,\n  \"tripID\": 1,\n  \"amount\": 50.00,\n  \"invoiceDate\": \"2025-08-12T00:00:00Z\",\n  \"status\": \"Paid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/Invoices/1"
+						}
+					}
+				},
+				{
+					"name": "Delete Invoice",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/Invoices/1"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Feedbacks",
+			"item": [
+				{
+					"name": "Get All Feedbacks",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/Feedbacks"
+						}
+					}
+				},
+				{
+					"name": "Get Feedback by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/Feedbacks/1"
+						}
+					}
+				},
+				{
+					"name": "Create Feedback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userID\": 1,\n  \"driverID\": 1,\n  \"tripID\": 1,\n  \"rating\": 5,\n  \"comment\": \"Çok iyi sürücü!\",\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/Feedbacks"
+						}
+					}
+				},
+				{
+					"name": "Delete Feedback",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/Feedbacks/1"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "SharedRides",
+			"item": [
+				{
+					"name": "Get All Shared Rides",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/SharedRides"
+						}
+					}
+				},
+				{
+					"name": "Get Shared Ride by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/SharedRides/1"
+						}
+					}
+				},
+				{
+					"name": "Create Shared Ride",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tripID\": 1,\n  \"passengerCount\": 2,\n  \"status\": \"active\",\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/SharedRides"
+						}
+					}
+				},
+				{
+					"name": "Update Shared Ride",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sharedRideID\": 1,\n  \"tripID\": 1,\n  \"passengerCount\": 2,\n  \"status\": \"active\",\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/SharedRides/1"
+						}
+					}
+				},
+				{
+					"name": "Delete Shared Ride",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/SharedRides/1"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Messages",
+			"item": [
+				{
+					"name": "Get All Messages",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/Messages"
+						}
+					}
+				},
+				{
+					"name": "Get Message by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/Messages/1"
+						}
+					}
+				},
+				{
+					"name": "Create Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"senderID\": 1,\n  \"receiverID\": 2,\n  \"content\": \"Merhaba!\",\n  \"sentAt\": \"2025-08-12T00:00:00Z\",\n  \"isRead\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/Messages"
+						}
+					}
+				},
+				{
+					"name": "Mark Message as Read",
+					"request": {
+						"method": "PUT",
+						"url": {
+							"raw": "{{base_url}}/api/Messages/read/1"
+						}
+					}
+				},
+				{
+					"name": "Delete Message",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/Messages/1"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "DriverDocuments",
+			"item": [
+				{
+					"name": "Get All Driver Documents",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/DriverDocuments"
+						}
+					}
+				},
+				{
+					"name": "Get Driver Document by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/DriverDocuments/1"
+						}
+					}
+				},
+				{
+					"name": "Get Driver Documents by Driver ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/DriverDocuments/driver/1"
+						}
+					}
+				},
+				{
+					"name": "Create Driver Document",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"driverID\": 1,\n  \"documentType\": \"Ehliyet\",\n  \"documentUrl\": \"https://example.com/ehliyet.jpg\",\n  \"uploadedDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DriverDocuments"
+						}
+					}
+				},
+				{
+					"name": "Delete Driver Document",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/DriverDocuments/1"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "BankInfo",
+			"item": [
+				{
+					"name": "Get All Bank Info",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/BankInfo"
+						}
+					}
+				},
+				{
+					"name": "Get Bank Info by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/BankInfo/1"
+						}
+					}
+				},
+				{
+					"name": "Get Bank Info by Driver ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/BankInfo/driver/1"
+						}
+					}
+				},
+				{
+					"name": "Create Bank Info",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"driverID\": 1,\n  \"bankName\": \"Ziraat Bankası\",\n  \"iban\": \"TR000000000000000000000000\",\n  \"accountNumber\": \"1234567890\",\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/BankInfo"
+						}
+					}
+				},
+				{
+					"name": "Update Bank Info",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bankInfoID\": 1,\n  \"driverID\": 1,\n  \"bankName\": \"Ziraat Bankası\",\n  \"iban\": \"TR000000000000000000000000\",\n  \"accountNumber\": \"1234567890\",\n  \"createdDate\": \"2025-08-12T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/BankInfo/1"
+						}
+					}
+				},
+				{
+					"name": "Delete Bank Info",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/BankInfo/1"
+						}
+					}
 				}
 			]
 		}

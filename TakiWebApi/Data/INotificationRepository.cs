@@ -7,17 +7,15 @@ public interface INotificationRepository
     Task<IEnumerable<Notification>> GetAllNotificationsAsync();
     Task<Notification?> GetNotificationByIdAsync(int notificationId);
     Task<IEnumerable<Notification>> GetNotificationsByUserIdAsync(int userId);
-    Task<IEnumerable<Notification>> GetUnreadNotificationsByUserIdAsync(int userId);
-    Task<IEnumerable<Notification>> GetActiveNotificationsAsync();
+    Task<IEnumerable<Notification>> GetNotificationsByDriverIdAsync(int driverId);
+    Task<IEnumerable<Notification>> GetUnreadNotificationsAsync();
     Task<IEnumerable<Notification>> GetNotificationsPaginatedAsync(int pageNumber, int pageSize);
     Task<int> GetTotalNotificationsCountAsync();
-    Task<int> GetActiveNotificationsCountAsync();
-    Task<int> GetUnreadNotificationsCountByUserIdAsync(int userId);
+    Task<int> GetUnreadNotificationsCountAsync();
     Task<IEnumerable<Notification>> SearchNotificationsByTitleAsync(string searchTerm);
-    Task<IEnumerable<Notification>> GetNotificationsByDateRangeAsync(DateTime startDate, DateTime endDate);
-    Task<bool> MarkNotificationAsReadAsync(int notificationId);
-    Task<bool> MarkAllNotificationsAsReadByUserIdAsync(int userId);
+    Task<IEnumerable<Notification>> GetNotificationsByCreatedDateRangeAsync(DateTime startDate, DateTime endDate);
     Task<int> CreateNotificationAsync(Notification notification);
     Task<bool> UpdateNotificationAsync(Notification notification);
+    Task<bool> MarkAsReadAsync(int notificationId);
     Task<bool> DeleteNotificationAsync(int notificationId);
 }

@@ -13,9 +13,9 @@ public interface IDriverRatingRepository
     Task<IEnumerable<DriverRating>> GetDriverRatingsPaginatedAsync(int pageNumber, int pageSize);
     Task<int> GetTotalDriverRatingsCountAsync();
     Task<int> GetActiveDriverRatingsCountAsync();
-    Task<double> GetAverageRatingByDriverIdAsync(int driverId);
+    Task<decimal> GetAverageRatingByDriverIdAsync(int driverId);
     Task<IEnumerable<DriverRating>> GetDriverRatingsByDateRangeAsync(DateTime startDate, DateTime endDate);
-    Task<IEnumerable<DriverRating>> GetDriverRatingsByRatingValueAsync(int rating);
+    Task<IEnumerable<DriverRating>> GetDriverRatingsByRatingValueAsync(decimal rating);
     Task<int> CreateDriverRatingAsync(DriverRating driverRating);
     Task<bool> UpdateDriverRatingAsync(DriverRating driverRating);
     Task<bool> DeleteDriverRatingAsync(int ratingId);

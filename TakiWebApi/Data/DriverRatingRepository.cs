@@ -18,10 +18,10 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
-            ORDER BY RatedAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -40,10 +40,10 @@ public class DriverRatingRepository : IDriverRatingRepository
     public async Task<DriverRating?> GetDriverRatingByIdAsync(int ratingId)
     {
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
-            WHERE RatingID = @RatingId";
+            WHERE DriverRatingID = @RatingId";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -68,7 +68,7 @@ public class DriverRatingRepository : IDriverRatingRepository
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
             WHERE DriverID = @DriverId AND IsDeleted = 0
-            ORDER BY RatedAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -139,11 +139,11 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
             WHERE IsDeleted = 0
-            ORDER BY RatedAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -163,10 +163,10 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
-            ORDER BY RatedAt DESC
+            ORDER BY CreatedDate DESC
             OFFSET @Offset ROWS
             FETCH NEXT @PageSize ROWS ONLY";
 
@@ -210,7 +210,7 @@ public class DriverRatingRepository : IDriverRatingRepository
         return Convert.ToInt32(result);
     }
 
-    public async Task<double> GetAverageRatingByDriverIdAsync(int driverId)
+    public async Task<decimal> GetAverageRatingByDriverIdAsync(int driverId)
     {
         const string sql = "SELECT AVG(CAST(Rating AS FLOAT)) FROM DriverRatings WHERE DriverID = @DriverId AND IsDeleted = 0";
 
@@ -220,18 +220,18 @@ public class DriverRatingRepository : IDriverRatingRepository
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
-        return result == DBNull.Value ? 0.0 : Convert.ToDouble(result);
+        return result == DBNull.Value ? 0.0m : Convert.ToDecimal(result);
     }
 
     public async Task<IEnumerable<DriverRating>> GetDriverRatingsByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
-            WHERE RatedAt >= @StartDate AND RatedAt <= @EndDate
-            ORDER BY RatedAt DESC";
+            WHERE CreatedDate >= @StartDate AND CreatedDate <= @EndDate
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -249,15 +249,15 @@ public class DriverRatingRepository : IDriverRatingRepository
         return driverRatings;
     }
 
-    public async Task<IEnumerable<DriverRating>> GetDriverRatingsByRatingValueAsync(int rating)
+    public async Task<IEnumerable<DriverRating>> GetDriverRatingsByRatingValueAsync(decimal rating)
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
             WHERE Rating = @Rating AND IsDeleted = 0
-            ORDER BY RatedAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -277,8 +277,8 @@ public class DriverRatingRepository : IDriverRatingRepository
     public async Task<int> CreateDriverRatingAsync(DriverRating driverRating)
     {
         const string sql = @"
-            INSERT INTO DriverRatings (TripID, DriverID, UserID, Rating, RatedAt, CreatedBy, CreatedDate, IsDeleted)
-            VALUES (@TripID, @DriverID, @UserID, @Rating, @RatedAt, @CreatedBy, @CreatedDate, @IsDeleted);
+            INSERT INTO DriverRatings (TripID, DriverID, UserID, Rating, Comment, CreatedBy, CreatedDate, IsDeleted)
+            VALUES (@TripID, @DriverID, @UserID, @Rating, @Comment, @CreatedBy, @CreatedDate, @IsDeleted);
             SELECT SCOPE_IDENTITY();";
 
         using var connection = new SqlConnection(_connectionString);
@@ -288,7 +288,7 @@ public class DriverRatingRepository : IDriverRatingRepository
         command.Parameters.AddWithValue("@DriverID", driverRating.DriverID ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@UserID", driverRating.UserID ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Rating", driverRating.Rating ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@RatedAt", driverRating.RatedAt);
+        command.Parameters.AddWithValue("@Comment", driverRating.Comment ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@CreatedBy", driverRating.CreatedBy ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@CreatedDate", driverRating.CreatedDate);
         command.Parameters.AddWithValue("@IsDeleted", driverRating.IsDeleted);
@@ -303,17 +303,18 @@ public class DriverRatingRepository : IDriverRatingRepository
         const string sql = @"
             UPDATE DriverRatings 
             SET TripID = @TripID, DriverID = @DriverID, UserID = @UserID, 
-                Rating = @Rating, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
-            WHERE RatingID = @RatingID";
+                Rating = @Rating, Comment = @Comment, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
+            WHERE DriverRatingID = @DriverRatingID";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
         
-        command.Parameters.AddWithValue("@RatingID", driverRating.RatingID);
+        command.Parameters.AddWithValue("@DriverRatingID", driverRating.DriverRatingID);
         command.Parameters.AddWithValue("@TripID", driverRating.TripID ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@DriverID", driverRating.DriverID ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@UserID", driverRating.UserID ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Rating", driverRating.Rating ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Comment", driverRating.Comment ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@UpdatedBy", driverRating.UpdatedBy ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@UpdatedDate", driverRating.UpdatedDate ?? (object)DBNull.Value);
 
@@ -327,11 +328,11 @@ public class DriverRatingRepository : IDriverRatingRepository
         const string sql = @"
             UPDATE DriverRatings 
             SET IsDeleted = 1, DeletedDate = @DeletedDate 
-            WHERE RatingID = @RatingID";
+            WHERE DriverRatingID = @DriverRatingID";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@RatingID", ratingId);
+        command.Parameters.AddWithValue("@DriverRatingID", ratingId);
         command.Parameters.AddWithValue("@DeletedDate", DateTime.UtcNow);
 
         await connection.OpenAsync();
@@ -343,12 +344,12 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         return new DriverRating
         {
-            RatingID = reader.GetInt32("RatingID"),
+            DriverRatingID = reader.GetInt32("DriverRatingID"),
             TripID = reader.IsDBNull("TripID") ? null : reader.GetInt32("TripID"),
             DriverID = reader.IsDBNull("DriverID") ? null : reader.GetInt32("DriverID"),
             UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
-            Rating = reader.IsDBNull("Rating") ? null : reader.GetInt32("Rating"),
-            RatedAt = reader.GetDateTime("RatedAt"),
+            Rating = reader.IsDBNull("Rating") ? null : reader.GetDecimal("Rating"),
+            Comment = reader.IsDBNull("Comment") ? null : reader.GetString("Comment"),
             CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
             CreatedDate = reader.GetDateTime("CreatedDate"),
             UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),

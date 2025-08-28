@@ -7,7 +7,7 @@ namespace TakiWebApi.Models;
 public class DriverRating
 {
     [Key]
-    public int RatingID { get; set; }
+    public int DriverRatingID { get; set; }
 
     public int? TripID { get; set; }
 
@@ -16,9 +16,10 @@ public class DriverRating
     public int? UserID { get; set; }
 
     [Range(1, 5)]
-    public int? Rating { get; set; }
+    public decimal? Rating { get; set; }
 
-    public DateTime RatedAt { get; set; } = DateTime.UtcNow;
+    [StringLength(1000)]
+    public string? Comment { get; set; }
 
     public int? CreatedBy { get; set; }
 

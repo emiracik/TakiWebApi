@@ -18,10 +18,11 @@ public class NotificationRepository : INotificationRepository
     {
         var notifications = new List<Notification>();
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            ORDER BY SentAt DESC";
+            WHERE IsDeleted = 0
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -40,14 +41,14 @@ public class NotificationRepository : INotificationRepository
     public async Task<Notification?> GetNotificationByIdAsync(int notificationId)
     {
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            WHERE NotificationID = @NotificationId";
+            WHERE NotificationID = @NotificationId AND IsDeleted = 0";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@NotificationId", notificationId);
+        command.Parameters.Add("@NotificationId", SqlDbType.Int).Value = notificationId;
 
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -64,15 +65,15 @@ public class NotificationRepository : INotificationRepository
     {
         var notifications = new List<Notification>();
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
             WHERE UserID = @UserId AND IsDeleted = 0
-            ORDER BY SentAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@UserId", userId);
+        command.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
 
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -85,19 +86,19 @@ public class NotificationRepository : INotificationRepository
         return notifications;
     }
 
-    public async Task<IEnumerable<Notification>> GetUnreadNotificationsByUserIdAsync(int userId)
+    public async Task<IEnumerable<Notification>> GetNotificationsByDriverIdAsync(int driverId)
     {
         var notifications = new List<Notification>();
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            WHERE UserID = @UserId AND IsRead = 0 AND IsDeleted = 0
-            ORDER BY SentAt DESC";
+            WHERE DriverID = @DriverId AND IsDeleted = 0
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@UserId", userId);
+        command.Parameters.Add("@DriverId", SqlDbType.Int).Value = driverId;
 
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -110,15 +111,15 @@ public class NotificationRepository : INotificationRepository
         return notifications;
     }
 
-    public async Task<IEnumerable<Notification>> GetActiveNotificationsAsync()
+    public async Task<IEnumerable<Notification>> GetUnreadNotificationsAsync()
     {
         var notifications = new List<Notification>();
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            WHERE IsDeleted = 0
-            ORDER BY SentAt DESC";
+            WHERE IsRead = 0 AND IsDeleted = 0
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -137,18 +138,20 @@ public class NotificationRepository : INotificationRepository
     public async Task<IEnumerable<Notification>> GetNotificationsPaginatedAsync(int pageNumber, int pageSize)
     {
         var notifications = new List<Notification>();
+        var offset = (pageNumber - 1) * pageSize;
+
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            ORDER BY SentAt DESC
-            OFFSET @Offset ROWS
-            FETCH NEXT @PageSize ROWS ONLY";
+            WHERE IsDeleted = 0
+            ORDER BY CreatedDate DESC
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@Offset", (pageNumber - 1) * pageSize);
-        command.Parameters.AddWithValue("@PageSize", pageSize);
+        command.Parameters.Add("@Offset", SqlDbType.Int).Value = offset;
+        command.Parameters.Add("@PageSize", SqlDbType.Int).Value = pageSize;
 
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -163,18 +166,6 @@ public class NotificationRepository : INotificationRepository
 
     public async Task<int> GetTotalNotificationsCountAsync()
     {
-        const string sql = "SELECT COUNT(*) FROM Notifications";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-
-        await connection.OpenAsync();
-        var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
-    }
-
-    public async Task<int> GetActiveNotificationsCountAsync()
-    {
         const string sql = "SELECT COUNT(*) FROM Notifications WHERE IsDeleted = 0";
 
         using var connection = new SqlConnection(_connectionString);
@@ -182,35 +173,34 @@ public class NotificationRepository : INotificationRepository
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        return result != null ? (int)result : 0;
     }
 
-    public async Task<int> GetUnreadNotificationsCountByUserIdAsync(int userId)
+    public async Task<int> GetUnreadNotificationsCountAsync()
     {
-        const string sql = "SELECT COUNT(*) FROM Notifications WHERE UserID = @UserId AND IsRead = 0 AND IsDeleted = 0";
+        const string sql = "SELECT COUNT(*) FROM Notifications WHERE IsRead = 0 AND IsDeleted = 0";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@UserId", userId);
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        return result != null ? (int)result : 0;
     }
 
     public async Task<IEnumerable<Notification>> SearchNotificationsByTitleAsync(string searchTerm)
     {
         var notifications = new List<Notification>();
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            WHERE Title LIKE @SearchTerm OR Message LIKE @SearchTerm
-            ORDER BY SentAt DESC";
+            WHERE IsDeleted = 0 AND (Title LIKE @SearchTerm OR Message LIKE @SearchTerm)
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@SearchTerm", $"%{searchTerm}%");
+        command.Parameters.Add("@SearchTerm", SqlDbType.NVarChar, 255).Value = $"%{searchTerm}%";
 
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -223,20 +213,20 @@ public class NotificationRepository : INotificationRepository
         return notifications;
     }
 
-    public async Task<IEnumerable<Notification>> GetNotificationsByDateRangeAsync(DateTime startDate, DateTime endDate)
+    public async Task<IEnumerable<Notification>> GetNotificationsByCreatedDateRangeAsync(DateTime startDate, DateTime endDate)
     {
         var notifications = new List<Notification>();
         const string sql = @"
-            SELECT NotificationID, UserID, Title, Message, IsRead, SentAt,
+            SELECT NotificationID, Title, Message, UserID, DriverID, NotificationType, IsRead, ReadDate,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Notifications
-            WHERE SentAt >= @StartDate AND SentAt <= @EndDate
-            ORDER BY SentAt DESC";
+            WHERE IsDeleted = 0 AND CreatedDate >= @StartDate AND CreatedDate <= @EndDate
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@StartDate", startDate);
-        command.Parameters.AddWithValue("@EndDate", endDate);
+        command.Parameters.Add("@StartDate", SqlDbType.DateTime).Value = startDate;
+        command.Parameters.Add("@EndDate", SqlDbType.DateTime).Value = endDate;
 
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -247,87 +237,78 @@ public class NotificationRepository : INotificationRepository
         }
 
         return notifications;
-    }
-
-    public async Task<bool> MarkNotificationAsReadAsync(int notificationId)
-    {
-        const string sql = @"
-            UPDATE Notifications 
-            SET IsRead = 1, UpdatedDate = @UpdatedDate
-            WHERE NotificationID = @NotificationId";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@NotificationId", notificationId);
-        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
-
-        await connection.OpenAsync();
-        var rowsAffected = await command.ExecuteNonQueryAsync();
-        return rowsAffected > 0;
-    }
-
-    public async Task<bool> MarkAllNotificationsAsReadByUserIdAsync(int userId)
-    {
-        const string sql = @"
-            UPDATE Notifications 
-            SET IsRead = 1, UpdatedDate = @UpdatedDate
-            WHERE UserID = @UserId AND IsRead = 0";
-
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@UserId", userId);
-        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
-
-        await connection.OpenAsync();
-        var rowsAffected = await command.ExecuteNonQueryAsync();
-        return rowsAffected > 0;
     }
 
     public async Task<int> CreateNotificationAsync(Notification notification)
     {
         const string sql = @"
-            INSERT INTO Notifications (UserID, Title, Message, IsRead, SentAt, CreatedBy, CreatedDate, IsDeleted)
-            VALUES (@UserID, @Title, @Message, @IsRead, @SentAt, @CreatedBy, @CreatedDate, @IsDeleted);
-            SELECT SCOPE_IDENTITY();";
+            INSERT INTO Notifications (Title, Message, UserID, DriverID, NotificationType, IsRead, CreatedBy, CreatedDate)
+            OUTPUT INSERTED.NotificationID
+            VALUES (@Title, @Message, @UserID, @DriverID, @NotificationType, @IsRead, @CreatedBy, @CreatedDate)";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        
-        command.Parameters.AddWithValue("@UserID", notification.UserID ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Title", notification.Title ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Message", notification.Message ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@IsRead", notification.IsRead);
-        command.Parameters.AddWithValue("@SentAt", notification.SentAt);
-        command.Parameters.AddWithValue("@CreatedBy", notification.CreatedBy ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@CreatedDate", notification.CreatedDate);
-        command.Parameters.AddWithValue("@IsDeleted", notification.IsDeleted);
+
+        command.Parameters.Add("@Title", SqlDbType.NVarChar, 200).Value = (object?)notification.Title ?? DBNull.Value;
+        command.Parameters.Add("@Message", SqlDbType.NText).Value = (object?)notification.Message ?? DBNull.Value;
+        command.Parameters.Add("@UserID", SqlDbType.Int).Value = (object?)notification.UserID ?? DBNull.Value;
+        command.Parameters.Add("@DriverID", SqlDbType.Int).Value = (object?)notification.DriverID ?? DBNull.Value;
+        command.Parameters.Add("@NotificationType", SqlDbType.NVarChar, 50).Value = (object?)notification.NotificationType ?? DBNull.Value;
+        command.Parameters.Add("@IsRead", SqlDbType.Bit).Value = notification.IsRead;
+        command.Parameters.Add("@CreatedBy", SqlDbType.Int).Value = (object?)notification.CreatedBy ?? DBNull.Value;
+        command.Parameters.Add("@CreatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        return result != null ? (int)result : 0;
     }
 
     public async Task<bool> UpdateNotificationAsync(Notification notification)
     {
         const string sql = @"
             UPDATE Notifications 
-            SET UserID = @UserID, Title = @Title, Message = @Message, 
-                IsRead = @IsRead, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
-            WHERE NotificationID = @NotificationID";
+            SET Title = @Title, Message = @Message, UserID = @UserID, DriverID = @DriverID,
+                NotificationType = @NotificationType, IsRead = @IsRead, ReadDate = @ReadDate,
+                UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
+            WHERE NotificationID = @NotificationID AND IsDeleted = 0";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        
-        command.Parameters.AddWithValue("@NotificationID", notification.NotificationID);
-        command.Parameters.AddWithValue("@UserID", notification.UserID ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Title", notification.Title ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Message", notification.Message ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@IsRead", notification.IsRead);
-        command.Parameters.AddWithValue("@UpdatedBy", notification.UpdatedBy ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@UpdatedDate", notification.UpdatedDate ?? (object)DBNull.Value);
+
+        command.Parameters.Add("@NotificationID", SqlDbType.Int).Value = notification.NotificationID;
+        command.Parameters.Add("@Title", SqlDbType.NVarChar, 200).Value = (object?)notification.Title ?? DBNull.Value;
+        command.Parameters.Add("@Message", SqlDbType.NText).Value = (object?)notification.Message ?? DBNull.Value;
+        command.Parameters.Add("@UserID", SqlDbType.Int).Value = (object?)notification.UserID ?? DBNull.Value;
+        command.Parameters.Add("@DriverID", SqlDbType.Int).Value = (object?)notification.DriverID ?? DBNull.Value;
+        command.Parameters.Add("@NotificationType", SqlDbType.NVarChar, 50).Value = (object?)notification.NotificationType ?? DBNull.Value;
+        command.Parameters.Add("@IsRead", SqlDbType.Bit).Value = notification.IsRead;
+        command.Parameters.Add("@ReadDate", SqlDbType.DateTime).Value = (object?)notification.ReadDate ?? DBNull.Value;
+        command.Parameters.Add("@UpdatedBy", SqlDbType.Int).Value = (object?)notification.UpdatedBy ?? DBNull.Value;
+        command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
 
         await connection.OpenAsync();
         var rowsAffected = await command.ExecuteNonQueryAsync();
+
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> MarkAsReadAsync(int notificationId)
+    {
+        const string sql = @"
+            UPDATE Notifications 
+            SET IsRead = 1, ReadDate = @ReadDate, UpdatedDate = @UpdatedDate
+            WHERE NotificationID = @NotificationID AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+
+        command.Parameters.Add("@NotificationID", SqlDbType.Int).Value = notificationId;
+        command.Parameters.Add("@ReadDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+        command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+
         return rowsAffected > 0;
     }
 
@@ -335,16 +316,19 @@ public class NotificationRepository : INotificationRepository
     {
         const string sql = @"
             UPDATE Notifications 
-            SET IsDeleted = 1, DeletedDate = @DeletedDate 
+            SET IsDeleted = 1, DeletedDate = @DeletedDate, DeletedBy = @DeletedBy
             WHERE NotificationID = @NotificationID";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@NotificationID", notificationId);
-        command.Parameters.AddWithValue("@DeletedDate", DateTime.UtcNow);
+
+        command.Parameters.Add("@NotificationID", SqlDbType.Int).Value = notificationId;
+        command.Parameters.Add("@DeletedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+        command.Parameters.Add("@DeletedBy", SqlDbType.Int).Value = DBNull.Value; // Should be set based on current user
 
         await connection.OpenAsync();
         var rowsAffected = await command.ExecuteNonQueryAsync();
+
         return rowsAffected > 0;
     }
 
@@ -353,11 +337,13 @@ public class NotificationRepository : INotificationRepository
         return new Notification
         {
             NotificationID = reader.GetInt32("NotificationID"),
-            UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
             Title = reader.IsDBNull("Title") ? null : reader.GetString("Title"),
             Message = reader.IsDBNull("Message") ? null : reader.GetString("Message"),
+            UserID = reader.IsDBNull("UserID") ? null : reader.GetInt32("UserID"),
+            DriverID = reader.IsDBNull("DriverID") ? null : reader.GetInt32("DriverID"),
+            NotificationType = reader.IsDBNull("NotificationType") ? null : reader.GetString("NotificationType"),
             IsRead = reader.GetBoolean("IsRead"),
-            SentAt = reader.GetDateTime("SentAt"),
+            ReadDate = reader.IsDBNull("ReadDate") ? null : reader.GetDateTime("ReadDate"),
             CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
             CreatedDate = reader.GetDateTime("CreatedDate"),
             UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),

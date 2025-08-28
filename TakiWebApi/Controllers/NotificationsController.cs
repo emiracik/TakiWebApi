@@ -47,21 +47,22 @@ public class NotificationsController : ControllerBase
     [HttpGet("user/{userId}/unread")]
     public async Task<ActionResult<IEnumerable<Notification>>> GetUnreadNotificationsByUserId(int userId)
     {
-        var notifications = await _notificationRepository.GetUnreadNotificationsByUserIdAsync(userId);
-        return Ok(notifications);
+        var notifications = await _notificationRepository.GetNotificationsByUserIdAsync(userId);
+        var unreadNotifications = notifications.Where(n => !n.IsRead);
+        return Ok(unreadNotifications);
     }
 
     [HttpGet("user/{userId}/unread/count")]
     public async Task<ActionResult<int>> GetUnreadNotificationsCountByUserId(int userId)
     {
-        var count = await _notificationRepository.GetUnreadNotificationsCountByUserIdAsync(userId);
+        var count = await _notificationRepository.GetUnreadNotificationsCountAsync();
         return Ok(count);
     }
 
     [HttpGet("active")]
     public async Task<ActionResult<IEnumerable<Notification>>> GetActiveNotifications()
     {
-        var notifications = await _notificationRepository.GetActiveNotificationsAsync();
+        var notifications = await _notificationRepository.GetAllNotificationsAsync();
         return Ok(notifications);
     }
 
@@ -87,7 +88,7 @@ public class NotificationsController : ControllerBase
     [HttpGet("active/count")]
     public async Task<ActionResult<int>> GetActiveNotificationsCount()
     {
-        var count = await _notificationRepository.GetActiveNotificationsCountAsync();
+        var count = await _notificationRepository.GetTotalNotificationsCountAsync();
         return Ok(count);
     }
 
@@ -111,7 +112,7 @@ public class NotificationsController : ControllerBase
             return BadRequest("Start date cannot be greater than end date.");
         }
 
-        var notifications = await _notificationRepository.GetNotificationsByDateRangeAsync(startDate, endDate);
+        var notifications = await _notificationRepository.GetNotificationsByCreatedDateRangeAsync(startDate, endDate);
         return Ok(notifications);
     }
 
@@ -126,7 +127,7 @@ public class NotificationsController : ControllerBase
                 return NotFound();
             }
 
-            var success = await _notificationRepository.MarkNotificationAsReadAsync(id);
+            var success = await _notificationRepository.MarkAsReadAsync(id);
             
             if (!success)
             {
@@ -146,10 +147,18 @@ public class NotificationsController : ControllerBase
     {
         try
         {
-            var success = await _notificationRepository.MarkAllNotificationsAsReadByUserIdAsync(userId);
+            // Get all unread notifications for user and mark them as read
+            var unreadNotifications = await _notificationRepository.GetNotificationsByUserIdAsync(userId);
+            var success = true;
+            
+            foreach (var notification in unreadNotifications.Where(n => !n.IsRead))
+            {
+                var result = await _notificationRepository.MarkAsReadAsync(notification.NotificationID);
+                if (!result) success = false;
+            }
             
             if (!success)
-            {
+            {   
                 return StatusCode(500, "Failed to mark all notifications as read.");
             }
 

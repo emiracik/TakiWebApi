@@ -45,7 +45,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("driver/{driverId}/average")]
-    public async Task<ActionResult<double>> GetAverageRatingByDriverId(int driverId)
+    public async Task<ActionResult<decimal>> GetAverageRatingByDriverId(int driverId)
     {
         var averageRating = await _driverRatingRepository.GetAverageRatingByDriverIdAsync(driverId);
         return Ok(averageRating);
@@ -66,7 +66,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("rating/{rating}")]
-    public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsByRatingValue(int rating)
+    public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsByRatingValue(decimal rating)
     {
         if (rating < 1 || rating > 5)
         {
@@ -151,7 +151,7 @@ public class DriverRatingsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDriverRating(int id, [FromBody] DriverRating driverRating)
     {
-        if (id != driverRating.RatingID)
+        if (id != driverRating.DriverRatingID)
         {
             return BadRequest("ID mismatch between route and body.");
         }
