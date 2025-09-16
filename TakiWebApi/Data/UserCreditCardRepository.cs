@@ -17,12 +17,12 @@ public class UserCreditCardRepository : IUserCreditCardRepository
     public async Task<IEnumerable<UserCreditCard>> GetAllUserCreditCardsAsync()
     {
         var userCreditCards = new List<UserCreditCard>();
-        const string sql = @"
-            SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, 
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserCreditCards
-            WHERE IsDeleted = 0
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CardType,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM UserCreditCards
+         WHERE IsDeleted = 0
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -40,6 +40,7 @@ public class UserCreditCardRepository : IUserCreditCardRepository
                 CardNumberMasked = reader.GetString("CardNumberMasked"),
                 ExpiryMonth = reader.GetInt32("ExpiryMonth"),
                 ExpiryYear = reader.GetInt32("ExpiryYear"),
+                CardType = reader.IsDBNull("CardType") ? null : reader.GetString("CardType"),
                 CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
                 CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
                 UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
@@ -55,11 +56,11 @@ public class UserCreditCardRepository : IUserCreditCardRepository
 
     public async Task<UserCreditCard?> GetUserCreditCardByIdAsync(int cardId)
     {
-        const string sql = @"
-            SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, 
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserCreditCards
-            WHERE CardID = @CardID AND IsDeleted = 0";
+     const string sql = @"
+         SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CardType,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM UserCreditCards
+         WHERE CardID = @CardID AND IsDeleted = 0";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -94,12 +95,12 @@ public class UserCreditCardRepository : IUserCreditCardRepository
     public async Task<IEnumerable<UserCreditCard>> GetUserCreditCardsByUserIdAsync(int userId)
     {
         var userCreditCards = new List<UserCreditCard>();
-        const string sql = @"
-            SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, 
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserCreditCards
-            WHERE UserID = @UserID AND IsDeleted = 0
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CardType,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM UserCreditCards
+         WHERE UserID = @UserID AND IsDeleted = 0
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -118,6 +119,7 @@ public class UserCreditCardRepository : IUserCreditCardRepository
                 CardNumberMasked = reader.GetString("CardNumberMasked"),
                 ExpiryMonth = reader.GetInt32("ExpiryMonth"),
                 ExpiryYear = reader.GetInt32("ExpiryYear"),
+                CardType = reader.IsDBNull("CardType") ? null : reader.GetString("CardType"),
                 CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
                 CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
                 UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
@@ -160,6 +162,7 @@ public class UserCreditCardRepository : IUserCreditCardRepository
                 CardNumberMasked = reader.GetString("CardNumberMasked"),
                 ExpiryMonth = reader.GetInt32("ExpiryMonth"),
                 ExpiryYear = reader.GetInt32("ExpiryYear"),
+                CardType = reader.IsDBNull("CardType") ? null : reader.GetString("CardType"),
                 CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
                 CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
                 UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
@@ -204,6 +207,7 @@ public class UserCreditCardRepository : IUserCreditCardRepository
                 CardNumberMasked = reader.GetString("CardNumberMasked"),
                 ExpiryMonth = reader.GetInt32("ExpiryMonth"),
                 ExpiryYear = reader.GetInt32("ExpiryYear"),
+                CardType = reader.IsDBNull("CardType") ? null : reader.GetString("CardType"),
                 CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
                 CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
                 UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
@@ -249,12 +253,12 @@ public class UserCreditCardRepository : IUserCreditCardRepository
     public async Task<IEnumerable<UserCreditCard>> SearchUserCreditCardsByNameAsync(string searchTerm)
     {
         var userCreditCards = new List<UserCreditCard>();
-        const string sql = @"
-            SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, 
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserCreditCards
-            WHERE IsDeleted = 0 AND CardHolderName LIKE @SearchTerm
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CardType,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM UserCreditCards
+         WHERE IsDeleted = 0 AND CardHolderName LIKE @SearchTerm
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -273,6 +277,7 @@ public class UserCreditCardRepository : IUserCreditCardRepository
                 CardNumberMasked = reader.GetString("CardNumberMasked"),
                 ExpiryMonth = reader.GetInt32("ExpiryMonth"),
                 ExpiryYear = reader.GetInt32("ExpiryYear"),
+                CardType = reader.IsDBNull("CardType") ? null : reader.GetString("CardType"),
                 CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
                 CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
                 UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
@@ -289,12 +294,12 @@ public class UserCreditCardRepository : IUserCreditCardRepository
     public async Task<IEnumerable<UserCreditCard>> GetUserCreditCardsByCreatedDateRangeAsync(DateTime startDate, DateTime endDate)
     {
         var userCreditCards = new List<UserCreditCard>();
-        const string sql = @"
-            SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, 
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM UserCreditCards
-            WHERE IsDeleted = 0 AND CreatedDate >= @StartDate AND CreatedDate <= @EndDate
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT CardID, UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CardType,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM UserCreditCards
+         WHERE IsDeleted = 0 AND CreatedDate >= @StartDate AND CreatedDate <= @EndDate
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -314,6 +319,7 @@ public class UserCreditCardRepository : IUserCreditCardRepository
                 CardNumberMasked = reader.GetString("CardNumberMasked"),
                 ExpiryMonth = reader.GetInt32("ExpiryMonth"),
                 ExpiryYear = reader.GetInt32("ExpiryYear"),
+                CardType = reader.IsDBNull("CardType") ? null : reader.GetString("CardType"),
                 CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
                 CreatedDate = reader.IsDBNull("CreatedDate") ? DateTime.MinValue : reader.GetDateTime("CreatedDate"),
                 UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),
@@ -330,20 +336,21 @@ public class UserCreditCardRepository : IUserCreditCardRepository
     public async Task<int> CreateUserCreditCardAsync(UserCreditCard userCreditCard)
     {
         const string sql = @"
-            INSERT INTO UserCreditCards (UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CreatedBy, CreatedDate)
+            INSERT INTO UserCreditCards (UserID, CardHolderName, CardNumberMasked, ExpiryMonth, ExpiryYear, CardType, CreatedBy, CreatedDate)
             OUTPUT INSERTED.CardID
-            VALUES (@UserID, @CardHolderName, @CardNumberMasked, @ExpiryMonth, @ExpiryYear, @CreatedBy, @CreatedDate)";
+            VALUES (@UserID, @CardHolderName, @CardNumberMasked, @ExpiryMonth, @ExpiryYear, @CardType, @CreatedBy, @CreatedDate)";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
 
-        command.Parameters.Add("@UserID", SqlDbType.Int).Value = userCreditCard.UserID;
-        command.Parameters.Add("@CardHolderName", SqlDbType.NVarChar, 100).Value = userCreditCard.CardHolderName;
-        command.Parameters.Add("@CardNumberMasked", SqlDbType.NVarChar, 20).Value = userCreditCard.CardNumberMasked;
-        command.Parameters.Add("@ExpiryMonth", SqlDbType.Int).Value = userCreditCard.ExpiryMonth;
-        command.Parameters.Add("@ExpiryYear", SqlDbType.Int).Value = userCreditCard.ExpiryYear;
-        command.Parameters.Add("@CreatedBy", SqlDbType.Int).Value = (object?)userCreditCard.CreatedBy ?? DBNull.Value;
-        command.Parameters.Add("@CreatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+    command.Parameters.Add("@UserID", SqlDbType.Int).Value = userCreditCard.UserID;
+    command.Parameters.Add("@CardHolderName", SqlDbType.NVarChar, 100).Value = userCreditCard.CardHolderName;
+    command.Parameters.Add("@CardNumberMasked", SqlDbType.NVarChar, 20).Value = userCreditCard.CardNumberMasked;
+    command.Parameters.Add("@ExpiryMonth", SqlDbType.Int).Value = userCreditCard.ExpiryMonth;
+    command.Parameters.Add("@ExpiryYear", SqlDbType.Int).Value = userCreditCard.ExpiryYear;
+    command.Parameters.Add("@CardType", SqlDbType.NVarChar, 50).Value = (object?)userCreditCard.CardType ?? DBNull.Value;
+    command.Parameters.Add("@CreatedBy", SqlDbType.Int).Value = (object?)userCreditCard.CreatedBy ?? DBNull.Value;
+    command.Parameters.Add("@CreatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
@@ -357,20 +364,21 @@ public class UserCreditCardRepository : IUserCreditCardRepository
         const string sql = @"
             UPDATE UserCreditCards 
             SET UserID = @UserID, CardHolderName = @CardHolderName, CardNumberMasked = @CardNumberMasked, 
-                ExpiryMonth = @ExpiryMonth, ExpiryYear = @ExpiryYear, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
+                ExpiryMonth = @ExpiryMonth, ExpiryYear = @ExpiryYear, CardType = @CardType, UpdatedBy = @UpdatedBy, UpdatedDate = @UpdatedDate
             WHERE CardID = @CardID AND IsDeleted = 0";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
 
-        command.Parameters.Add("@CardID", SqlDbType.Int).Value = userCreditCard.CardID;
-        command.Parameters.Add("@UserID", SqlDbType.Int).Value = userCreditCard.UserID;
-        command.Parameters.Add("@CardHolderName", SqlDbType.NVarChar, 100).Value = userCreditCard.CardHolderName;
-        command.Parameters.Add("@CardNumberMasked", SqlDbType.NVarChar, 20).Value = userCreditCard.CardNumberMasked;
-        command.Parameters.Add("@ExpiryMonth", SqlDbType.Int).Value = userCreditCard.ExpiryMonth;
-        command.Parameters.Add("@ExpiryYear", SqlDbType.Int).Value = userCreditCard.ExpiryYear;
-        command.Parameters.Add("@UpdatedBy", SqlDbType.Int).Value = (object?)userCreditCard.UpdatedBy ?? DBNull.Value;
-        command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+    command.Parameters.Add("@CardID", SqlDbType.Int).Value = userCreditCard.CardID;
+    command.Parameters.Add("@UserID", SqlDbType.Int).Value = userCreditCard.UserID;
+    command.Parameters.Add("@CardHolderName", SqlDbType.NVarChar, 100).Value = userCreditCard.CardHolderName;
+    command.Parameters.Add("@CardNumberMasked", SqlDbType.NVarChar, 20).Value = userCreditCard.CardNumberMasked;
+    command.Parameters.Add("@ExpiryMonth", SqlDbType.Int).Value = userCreditCard.ExpiryMonth;
+    command.Parameters.Add("@ExpiryYear", SqlDbType.Int).Value = userCreditCard.ExpiryYear;
+    command.Parameters.Add("@CardType", SqlDbType.NVarChar, 50).Value = (object?)userCreditCard.CardType ?? DBNull.Value;
+    command.Parameters.Add("@UpdatedBy", SqlDbType.Int).Value = (object?)userCreditCard.UpdatedBy ?? DBNull.Value;
+    command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
 
         await connection.OpenAsync();
         var rowsAffected = await command.ExecuteNonQueryAsync();

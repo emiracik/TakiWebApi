@@ -17,12 +17,12 @@ public class TripRepository : ITripRepository
     public async Task<IEnumerable<Trip>> GetAllTripsAsync()
     {
         var trips = new List<Trip>();
-        const string sql = @"
-            SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
-                   EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Trips
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+             EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM Trips
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -40,12 +40,12 @@ public class TripRepository : ITripRepository
 
     public async Task<Trip?> GetTripByIdAsync(int tripId)
     {
-        const string sql = @"
-            SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
-                   EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Trips
-            WHERE TripID = @TripId";
+     const string sql = @"
+         SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+             EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM Trips
+         WHERE TripID = @TripId";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -65,13 +65,13 @@ public class TripRepository : ITripRepository
     public async Task<IEnumerable<Trip>> GetTripsByPassengerIdAsync(int passengerId)
     {
         var trips = new List<Trip>();
-        const string sql = @"
-            SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
-                   EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Trips
-            WHERE PassengerID = @PassengerId
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+             EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM Trips
+         WHERE PassengerID = @PassengerId
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -91,13 +91,13 @@ public class TripRepository : ITripRepository
     public async Task<IEnumerable<Trip>> GetTripsByDriverIdAsync(int driverId)
     {
         var trips = new List<Trip>();
-        const string sql = @"
-            SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
-                   EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Trips
-            WHERE DriverID = @DriverId
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+             EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM Trips
+         WHERE DriverID = @DriverId
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -117,13 +117,13 @@ public class TripRepository : ITripRepository
     public async Task<IEnumerable<Trip>> GetActiveTripsAsync()
     {
         var trips = new List<Trip>();
-        const string sql = @"
-            SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
-                   EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Trips
-            WHERE IsDeleted = 0
-            ORDER BY CreatedDate DESC";
+     const string sql = @"
+         SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+             EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM Trips
+         WHERE IsDeleted = 0
+         ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -142,13 +142,13 @@ public class TripRepository : ITripRepository
     public async Task<IEnumerable<Trip>> GetTripsPaginatedAsync(int pageNumber, int pageSize)
     {
         var trips = new List<Trip>();
-        const string sql = @"
-            SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
-                   EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod,
-                   CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
-            FROM Trips
-            ORDER BY CreatedDate DESC
-            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+     const string sql = @"
+         SELECT TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+             EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+             CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+         FROM Trips
+         ORDER BY CreatedDate DESC
+         OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -263,6 +263,22 @@ public class TripRepository : ITripRepository
         return Convert.ToDecimal(result);
     }
 
+    public async Task<decimal> GetTotalTripCostByPassengerIdAsync(int passengerId)
+    {
+        const string sql = @"
+            SELECT SUM(Cost)
+            FROM Trips
+            WHERE PassengerID = @PassengerId AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@PassengerId", passengerId);
+
+        await connection.OpenAsync();
+        var result = await command.ExecuteScalarAsync();
+        return result != DBNull.Value ? Convert.ToDecimal(result) : 0;
+    }
+
     private static Trip MapTripFromReader(SqlDataReader reader)
     {
         return new Trip
@@ -280,6 +296,8 @@ public class TripRepository : ITripRepository
             EndTime = reader.IsDBNull("EndTime") ? null : reader.GetDateTime("EndTime"),
             Cost = reader.IsDBNull("Cost") ? null : reader.GetDecimal("Cost"),
             PaymentMethod = reader.IsDBNull("PaymentMethod") ? null : reader.GetString("PaymentMethod"),
+            Distance = reader.IsDBNull("Distance") ? null : reader.GetDouble("Distance"),
+            Status = reader.IsDBNull("Status") ? null : Enum.TryParse<RideStatus>(reader.GetString("Status"), out var status) ? status : null,
             CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetInt32("CreatedBy"),
             CreatedDate = reader.GetDateTime("CreatedDate"),
             UpdatedBy = reader.IsDBNull("UpdatedBy") ? null : reader.GetInt32("UpdatedBy"),

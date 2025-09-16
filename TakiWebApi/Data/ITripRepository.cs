@@ -15,4 +15,5 @@ public interface ITripRepository
     Task<IEnumerable<Trip>> GetTripsByDateRangeAsync(DateTime startDate, DateTime endDate);
     Task<IEnumerable<Trip>> GetTripsByPaymentMethodAsync(string paymentMethod);
     Task<decimal> GetTotalTripCostByDateRangeAsync(DateTime startDate, DateTime endDate);
+    Task<decimal> GetTotalTripCostByPassengerIdAsync(int passengerId);
 }

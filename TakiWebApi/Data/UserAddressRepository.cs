@@ -410,5 +410,47 @@ namespace TakiWebApi.Data
 
             return rowsAffected > 0;
         }
+
+        public async Task<bool> SetDefaultAddressAsync(int userId, int addressId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // First, set all user's addresses to non-default
+                const string resetSql = @"
+                    UPDATE UserAddresses 
+                    SET IsDefault = 0, UpdatedDate = @UpdatedDate 
+                    WHERE UserID = @UserID AND IsDeleted = 0";
+
+                using var resetCommand = new SqlCommand(resetSql, connection, transaction);
+                resetCommand.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+                resetCommand.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+                await resetCommand.ExecuteNonQueryAsync();
+
+                // Then, set the specified address as default
+                const string setDefaultSql = @"
+                    UPDATE UserAddresses 
+                    SET IsDefault = 1, UpdatedDate = @UpdatedDate 
+                    WHERE UserAddressID = @AddressID AND UserID = @UserID AND IsDeleted = 0";
+
+                using var setDefaultCommand = new SqlCommand(setDefaultSql, connection, transaction);
+                setDefaultCommand.Parameters.Add("@AddressID", SqlDbType.Int).Value = addressId;
+                setDefaultCommand.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+                setDefaultCommand.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+                
+                var rowsAffected = await setDefaultCommand.ExecuteNonQueryAsync();
+                
+                transaction.Commit();
+                return rowsAffected > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }

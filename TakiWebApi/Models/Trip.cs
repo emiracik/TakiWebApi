@@ -3,9 +3,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TakiWebApi.Models;
 
+public enum RideStatus
+{
+    completed,
+    cancelled,
+    inProgress
+}
+
 [Table("Trips")]
 public class Trip
 {
+    public RideStatus? Status { get; set; }
     [Key]
     public int TripID { get; set; }
 
@@ -50,6 +58,8 @@ public class Trip
     public DateTime? DeletedDate { get; set; }
 
     public bool IsDeleted { get; set; } = false;
+
+    public double? Distance { get; set; }
 
     // Navigation properties - removed virtual keyword since we're using ADO.NET
     [ForeignKey("PassengerID")]

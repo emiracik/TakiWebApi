@@ -1,0 +1,1106 @@
+# TakiWebApi Endpoint Listesi
+
+## Authentication
+- POST   /api/auth/login
+  - Response:
+    {
+      "success": true,
+      "token": "<jwt-token>",
+      "refreshToken": "<refresh-token>",
+      "userType": "user",
+      "userId": 1,
+      "phoneNumber": "05551111111",
+      "fullName": "John Doe",
+      "email": "john@example.com",
+      "message": "Login successful"
+    }
+- POST   /api/auth/driver-login
+  - Response:
+    {
+      "success": true,
+      "token": "<jwt-token>",
+      "userType": "driver",
+      "driverId": 1,
+      "phoneNumber": "05557777777",
+      "fullName": "Ali Hassan",
+      "email": "ali.driver@example.com",
+      "vehiclePlate": "NEW123",
+      "vehicleModel": "Toyota Corolla",
+      "vehicleColor": "White",
+      "message": "Driver login successful"
+    }
+- POST   /api/auth/register
+  - Response:
+    {
+      "success": true,
+      "token": "<jwt-token>",
+      "userId": 2,
+      "userType": "user",
+      "message": "Registration successful"
+    }
+- POST   /api/auth/driver-register
+  - Response:
+    {
+      "success": true,
+      "token": "<jwt-token>",
+      "driverId": 2,
+      "userType": "driver",
+      "message": "Driver registration successful"
+    }
+- POST   /api/auth/validate
+  - Response:
+    {
+      "success": true,
+      "valid": true,
+      "userId": 1,
+      "userType": "user",
+      "phoneNumber": "05551111111",
+      "message": "Token is valid"
+    }
+- POST   /api/auth/refresh-token
+  - Response:
+    {
+      "token": "<yeni-jwt-token>",
+      "refreshToken": "<yeni-refresh-token>"
+    }
+
+## Users
+- GET    /api/users
+  - Response:
+    [
+      {
+        "userID": 1,
+        "fullName": "John Doe",
+        "phoneNumber": "05551111111",
+        "email": "john@example.com",
+        "isActive": true
+      }
+    ]
+- GET    /api/users/{id}
+  - Response:
+    {
+      "userID": 1,
+      "fullName": "John Doe",
+      "phoneNumber": "05551111111",
+      "email": "john@example.com",
+      "isActive": true
+    }
+- GET    /api/users/phone/{phone}
+  - Response:
+    {
+      "userID": 1,
+      "fullName": "John Doe",
+      "phoneNumber": "05551111111",
+      "email": "john@example.com",
+      "isActive": true
+    }
+
+## Drivers
+- GET    /api/drivers
+  - Response:
+    [
+      {
+        "driverId": 1,
+        "fullName": "Ali Hassan",
+        "phoneNumber": "05557777777",
+        "email": "ali.driver@example.com",
+        "vehiclePlate": "NEW123",
+        "vehicleModel": "Toyota Corolla",
+        "vehicleColor": "White",
+        "isActive": true
+      }
+    ]
+- GET    /api/drivers/{id}
+  - Response:
+    {
+      "driverId": 1,
+      "fullName": "Ali Hassan",
+      "phoneNumber": "05557777777",
+      "email": "ali.driver@example.com",
+      "vehiclePlate": "NEW123",
+      "vehicleModel": "Toyota Corolla",
+      "vehicleColor": "White",
+      "isActive": true
+    }
+- GET    /api/drivers/active
+  - Response:
+    [
+      {
+        "driverId": 1,
+        "fullName": "Ali Hassan",
+        "phoneNumber": "05557777777",
+        "email": "ali.driver@example.com",
+        "vehiclePlate": "NEW123",
+        "vehicleModel": "Toyota Corolla",
+        "vehicleColor": "White",
+        "isActive": true
+      }
+    ]
+
+## Trips
+- GET    /api/trips
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "completed",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+- GET    /api/trips/{id}
+  - Response:
+    {
+      "tripId": 1,
+      "passengerId": 1,
+      "driverId": 1,
+      "status": "completed",
+      "pickupLocation": "Location A",
+      "dropoffLocation": "Location B",
+      "distance": 10.5,
+      "duration": 15,
+      "cost": 50,
+      "paymentMethod": "credit_card",
+      "isShared": false
+    }
+- GET    /api/trips/passenger/{passengerId}
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "completed",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+- GET    /api/trips/driver/{driverId}
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "completed",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+- GET    /api/trips/active
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "in_progress",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+- GET    /api/trips/paginated?pageNumber=&pageSize=
+  - Response:
+    {
+      "trips": [
+        {
+          "tripId": 1,
+          "passengerId": 1,
+          "driverId": 1,
+          "status": "completed",
+          "pickupLocation": "Location A",
+          "dropoffLocation": "Location B",
+          "distance": 10.5,
+          "duration": 15,
+          "cost": 50,
+          "paymentMethod": "credit_card",
+          "isShared": false
+        }
+      ],
+      "totalCount": 1
+    }
+- GET    /api/trips/count
+  - Response:
+    {
+      "count": 100
+    }
+- GET    /api/trips/active/count
+  - Response:
+    {
+      "count": 10
+    }
+- GET    /api/trips/date-range?startDate=&endDate=
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "completed",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+- GET    /api/trips/payment-method/{paymentMethod}
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "completed",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+- GET    /api/trips/cost/date-range?startDate=&endDate=
+  - Response:
+    [
+      {
+        "tripId": 1,
+        "passengerId": 1,
+        "driverId": 1,
+        "status": "completed",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 50,
+        "paymentMethod": "credit_card",
+        "isShared": false
+      }
+    ]
+
+## Blogs
+- GET    /api/blogs
+  - Response:
+    [
+      {
+        "blogId": 1,
+        "title": "Blog Title 1",
+        "content": "Blog content 1",
+        "authorId": 1,
+        "createdAt": "2023-10-01T10:00:00Z",
+        "updatedAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/blogs/{id}
+  - Response:
+    {
+      "blogId": 1,
+      "title": "Blog Title 1",
+      "content": "Blog content 1",
+      "authorId": 1,
+      "createdAt": "2023-10-01T10:00:00Z",
+      "updatedAt": "2023-10-01T10:00:00Z"
+    }
+
+## Announcements
+- GET    /api/announcements
+  - Response:
+    [
+      {
+        "announcementId": 1,
+        "title": "Announcement Title 1",
+        "content": "Announcement content 1",
+        "createdAt": "2023-10-01T10:00:00Z",
+        "updatedAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/announcements/{id}
+  - Response:
+    {
+      "announcementId": 1,
+      "title": "Announcement Title 1",
+      "content": "Announcement content 1",
+      "createdAt": "2023-10-01T10:00:00Z",
+      "updatedAt": "2023-10-01T10:00:00Z"
+    }
+
+## FAQs
+- GET    /api/faqs
+  - Response:
+    [
+      {
+        "faqId": 1,
+        "question": "FAQ Question 1",
+        "answer": "FAQ Answer 1",
+        "createdAt": "2023-10-01T10:00:00Z",
+        "updatedAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/faqs/{id}
+  - Response:
+    {
+      "faqId": 1,
+      "question": "FAQ Question 1",
+      "answer": "FAQ Answer 1",
+      "createdAt": "2023-10-01T10:00:00Z",
+      "updatedAt": "2023-10-01T10:00:00Z"
+    }
+
+## User Credit Cards
+- GET    /api/usercreditcards
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "cardNumber": "**** **** **** 1234",
+        "cardHolder": "John Doe",
+        "expiryDate": "12/25",
+        "isDefault": true
+      }
+    ]
+- GET    /api/usercreditcards/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "cardNumber": "**** **** **** 1234",
+      "cardHolder": "John Doe",
+      "expiryDate": "12/25",
+      "isDefault": true
+    }
+- GET    /api/usercreditcards/user/{userId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "cardNumber": "**** **** **** 1234",
+        "cardHolder": "John Doe",
+        "expiryDate": "12/25",
+        "isDefault": true
+      }
+    ]
+- POST   /api/usercreditcards
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "cardNumber": "**** **** **** 5678",
+      "cardHolder": "John Doe",
+      "expiryDate": "12/26",
+      "isDefault": false
+    }
+
+## User Addresses
+- GET    /api/useraddresses
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "addressLine1": "123 Main St",
+        "addressLine2": "",
+        "city": "Istanbul",
+        "state": "TR",
+        "zipCode": "34000",
+        "country": "Turkey",
+        "isDefault": true
+      }
+    ]
+- GET    /api/useraddresses/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "addressLine1": "123 Main St",
+      "addressLine2": "",
+      "city": "Istanbul",
+      "state": "TR",
+      "zipCode": "34000",
+      "country": "Turkey",
+      "isDefault": true
+    }
+- GET    /api/useraddresses/user/{userId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "addressLine1": "123 Main St",
+        "addressLine2": "",
+        "city": "Istanbul",
+        "state": "TR",
+        "zipCode": "34000",
+        "country": "Turkey",
+        "isDefault": true
+      }
+    ]
+- POST   /api/useraddresses
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "addressLine1": "456 Elm St",
+      "addressLine2": "Apt 2",
+      "city": "Istanbul",
+      "state": "TR",
+      "zipCode": "34001",
+      "country": "Turkey",
+      "isDefault": false
+    }
+
+## Notifications
+- GET    /api/notifications
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "title": "Notification Title 1",
+        "message": "Notification message 1",
+        "isRead": false,
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/notifications/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "title": "Notification Title 1",
+      "message": "Notification message 1",
+      "isRead": false,
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- GET    /api/notifications/user/{userId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "title": "Notification Title 1",
+        "message": "Notification message 1",
+        "isRead": false,
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/notifications/user/{userId}/unread
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "title": "Notification Title 1",
+        "message": "Notification message 1",
+        "isRead": false,
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/notifications/user/{userId}/unread/count
+  - Response:
+    {
+      "count": 5
+    }
+- PUT    /api/notifications/{id}/mark-as-read
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "title": "Notification Title 1",
+      "message": "Notification message 1",
+      "isRead": true,
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- POST   /api/notifications
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "title": "Notification Title 2",
+      "message": "Notification message 2",
+      "isRead": false,
+      "createdAt": "2023-10-02T10:00:00Z"
+    }
+
+## Driver Ratings
+- GET    /api/driverratings
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "userId": 1,
+        "rating": 5,
+        "comment": "Great driver!",
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/driverratings/{id}
+  - Response:
+    {
+      "id": 1,
+      "driverId": 1,
+      "userId": 1,
+      "rating": 5,
+      "comment": "Great driver!",
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- GET    /api/driverratings/driver/{driverId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "userId": 1,
+        "rating": 5,
+        "comment": "Great driver!",
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/driverratings/driver/{driverId}/average
+  - Response:
+    {
+      "driverId": 1,
+      "averageRating": 4.8
+    }
+- GET    /api/driverratings/rating/{rating}
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "userId": 1,
+        "rating": 5,
+        "comment": "Great driver!",
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- POST   /api/driverratings
+  - Response:
+    {
+      "id": 2,
+      "driverId": 1,
+      "userId": 1,
+      "rating": 4,
+      "comment": "Good driver, but car was a bit dirty.",
+      "createdAt": "2023-10-02T10:00:00Z"
+    }
+
+## User Notification Settings
+- GET    /api/usernotificationsettings
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "receivePushNotifications": true,
+        "receiveEmailNotifications": true,
+        "createdAt": "2023-10-01T10:00:00Z",
+        "updatedAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/usernotificationsettings/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "receivePushNotifications": true,
+      "receiveEmailNotifications": true,
+      "createdAt": "2023-10-01T10:00:00Z",
+      "updatedAt": "2023-10-01T10:00:00Z"
+    }
+- GET    /api/usernotificationsettings/user/{userId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "receivePushNotifications": true,
+        "receiveEmailNotifications": true,
+        "createdAt": "2023-10-01T10:00:00Z",
+        "updatedAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- POST   /api/usernotificationsettings
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "receivePushNotifications": false,
+      "receiveEmailNotifications": true,
+      "createdAt": "2023-10-02T10:00:00Z",
+      "updatedAt": "2023-10-02T10:00:00Z"
+    }
+- PUT    /api/usernotificationsettings/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "receivePushNotifications": false,
+      "receiveEmailNotifications": true,
+      "createdAt": "2023-10-01T10:00:00Z",
+      "updatedAt": "2023-10-02T10:00:00Z"
+    }
+
+## Health Checks
+- GET    /health/database
+  - Response:
+    {
+      "status": "healthy"
+    }
+- GET    /health/connections
+  - Response:
+    {
+      "status": "healthy"
+    }
+- GET    /weatherforecast
+  - Response:
+    [
+      {
+        "date": "2023-10-01",
+        "temperatureC": 20,
+        "temperatureF": 68,
+        "summary": "Sunny"
+      }
+    ]
+
+## CreditCards
+- GET    /api/creditcards
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "cardNumber": "**** **** **** 1234",
+        "cardHolder": "John Doe",
+        "expiryDate": "12/25",
+        "isDefault": true
+      }
+    ]
+- GET    /api/creditcards/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "cardNumber": "**** **** **** 1234",
+      "cardHolder": "John Doe",
+      "expiryDate": "12/25",
+      "isDefault": true
+    }
+- POST   /api/creditcards
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "cardNumber": "**** **** **** 5678",
+      "cardHolder": "John Doe",
+      "expiryDate": "12/26",
+      "isDefault": false
+    }
+- PUT    /api/creditcards/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "cardNumber": "**** **** **** 1234",
+      "cardHolder": "John Doe",
+      "expiryDate": "12/25",
+      "isDefault": true
+    }
+- DELETE /api/creditcards/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Credit card deleted successfully"
+    }
+
+## WalletTransactions
+- GET    /api/wallettransactions
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "amount": 100,
+        "transactionType": "credit",
+        "description": "Wallet top-up",
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/wallettransactions/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "amount": 100,
+      "transactionType": "credit",
+      "description": "Wallet top-up",
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- POST   /api/wallettransactions
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "amount": 50,
+      "transactionType": "debit",
+      "description": "Trip payment",
+      "createdAt": "2023-10-02T10:00:00Z"
+    }
+
+## Invoices
+- GET    /api/invoices
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "tripId": 1,
+        "amount": 50,
+        "status": "paid",
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/invoices/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "tripId": 1,
+      "amount": 50,
+      "status": "paid",
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- POST   /api/invoices
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "tripId": 2,
+      "amount": 75,
+      "status": "unpaid",
+      "createdAt": "2023-10-02T10:00:00Z"
+    }
+- PUT    /api/invoices/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "tripId": 1,
+      "amount": 50,
+      "status": "paid",
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- DELETE /api/invoices/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Invoice deleted successfully"
+    }
+
+## Feedbacks
+- GET    /api/feedbacks
+  - Response:
+    [
+      {
+        "id": 1,
+        "userId": 1,
+        "tripId": 1,
+        "rating": 5,
+        "comment": "Great service!",
+        "createdAt": "2023-10-01T10:00:00Z"
+      }
+    ]
+- GET    /api/feedbacks/{id}
+  - Response:
+    {
+      "id": 1,
+      "userId": 1,
+      "tripId": 1,
+      "rating": 5,
+      "comment": "Great service!",
+      "createdAt": "2023-10-01T10:00:00Z"
+    }
+- POST   /api/feedbacks
+  - Response:
+    {
+      "id": 2,
+      "userId": 1,
+      "tripId": 2,
+      "rating": 4,
+      "comment": "Good ride, but the driver was a bit late.",
+      "createdAt": "2023-10-02T10:00:00Z"
+    }
+- DELETE /api/feedbacks/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Feedback deleted successfully"
+    }
+
+## SharedRides
+- GET    /api/sharedrides
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "passengerId": 1,
+        "status": "active",
+        "pickupLocation": "Location A",
+        "dropoffLocation": "Location B",
+        "distance": 10.5,
+        "duration": 15,
+        "cost": 25,
+        "paymentMethod": "credit_card",
+        "isDriverRated": false,
+        "isPassengerRated": false
+      }
+    ]
+- GET    /api/sharedrides/{id}
+  - Response:
+    {
+      "id": 1,
+      "driverId": 1,
+      "passengerId": 1,
+      "status": "active",
+      "pickupLocation": "Location A",
+      "dropoffLocation": "Location B",
+      "distance": 10.5,
+      "duration": 15,
+      "cost": 25,
+      "paymentMethod": "credit_card",
+      "isDriverRated": false,
+      "isPassengerRated": false
+    }
+- POST   /api/sharedrides
+  - Response:
+    {
+      "id": 2,
+      "driverId": 1,
+      "passengerId": 2,
+      "status": "active",
+      "pickupLocation": "Location C",
+      "dropoffLocation": "Location D",
+      "distance": 15.2,
+      "duration": 20,
+      "cost": 30,
+      "paymentMethod": "cash"
+    }
+- PUT    /api/sharedrides/{id}
+  - Response:
+    {
+      "id": 1,
+      "driverId": 1,
+      "passengerId": 1,
+      "status": "completed",
+      "pickupLocation": "Location A",
+      "dropoffLocation": "Location B",
+      "distance": 10.5,
+      "duration": 15,
+      "cost": 25,
+      "paymentMethod": "credit_card",
+      "isDriverRated": true,
+      "isPassengerRated": true
+    }
+- DELETE /api/sharedrides/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Shared ride deleted successfully"
+    }
+
+## Messages
+- GET    /api/messages
+  - Response:
+    [
+      {
+        "id": 1,
+        "senderId": 1,
+        "receiverId": 2,
+        "content": "Hello, how are you?",
+        "timestamp": "2023-10-01T10:00:00Z",
+        "isRead": false
+      }
+    ]
+- GET    /api/messages/{id}
+  - Response:
+    {
+      "id": 1,
+      "senderId": 1,
+      "receiverId": 2,
+      "content": "Hello, how are you?",
+      "timestamp": "2023-10-01T10:00:00Z",
+      "isRead": false
+    }
+- POST   /api/messages
+  - Response:
+    {
+      "id": 2,
+      "senderId": 2,
+      "receiverId": 1,
+      "content": "I'm fine, thank you!",
+      "timestamp": "2023-10-02T10:00:00Z",
+      "isRead": false
+    }
+- PUT    /api/messages/read/{id}
+  - Response:
+    {
+      "id": 1,
+      "senderId": 1,
+      "receiverId": 2,
+      "content": "Hello, how are you?",
+      "timestamp": "2023-10-01T10:00:00Z",
+      "isRead": true
+    }
+- DELETE /api/messages/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Message deleted successfully"
+    }
+
+## DriverDocuments
+- GET    /api/driverdocuments
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "documentType": "license",
+        "documentNumber": "D123456789",
+        "expiryDate": "12/25",
+        "isVerified": true
+      }
+    ]
+- GET    /api/driverdocuments/{id}
+  - Response:
+    {
+      "id": 1,
+      "driverId": 1,
+      "documentType": "license",
+      "documentNumber": "D123456789",
+      "expiryDate": "12/25",
+      "isVerified": true
+    }
+- GET    /api/driverdocuments/driver/{driverId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "documentType": "license",
+        "documentNumber": "D123456789",
+        "expiryDate": "12/25",
+        "isVerified": true
+      }
+    ]
+- POST   /api/driverdocuments
+  - Response:
+    {
+      "id": 2,
+      "driverId": 1,
+      "documentType": "insurance",
+      "documentNumber": "I987654321",
+      "expiryDate": "12/26",
+      "isVerified": false
+    }
+- DELETE /api/driverdocuments/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Driver document deleted successfully"
+    }
+
+## BankInfo
+- GET    /api/bankinfo
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "bankName": "Bank A",
+        "accountNumber": "TR123456789012345678901234",
+        "iban": "TR330006100519786457841326",
+        "swiftCode": "ABCDEF12",
+        "isVerified": true
+      }
+    ]
+- GET    /api/bankinfo/{id}
+  - Response:
+    {
+      "id": 1,
+      "driverId": 1,
+      "bankName": "Bank A",
+      "accountNumber": "TR123456789012345678901234",
+      "iban": "TR330006100519786457841326",
+      "swiftCode": "ABCDEF12",
+      "isVerified": true
+    }
+- GET    /api/bankinfo/driver/{driverId}
+  - Response:
+    [
+      {
+        "id": 1,
+        "driverId": 1,
+        "bankName": "Bank A",
+        "accountNumber": "TR123456789012345678901234",
+        "iban": "TR330006100519786457841326",
+        "swiftCode": "ABCDEF12",
+        "isVerified": true
+      }
+    ]
+- POST   /api/bankinfo
+  - Response:
+    {
+      "id": 2,
+      "driverId": 1,
+      "bankName": "Bank B",
+      "accountNumber": "TR987654321098765432109876",
+      "iban": "TR330006100519786457841327",
+      "swiftCode": "FEDCBA98",
+      "isVerified": false
+    }
+- PUT    /api/bankinfo/{id}
+  - Response:
+    {
+      "id": 1,
+      "driverId": 1,
+      "bankName": "Bank A",
+      "accountNumber": "TR123456789012345678901234",
+      "iban": "TR330006100519786457841326",
+      "swiftCode": "ABCDEF12",
+      "isVerified": true
+    }
+- DELETE /api/bankinfo/{id}
+  - Response:
+    {
+      "success": true,
+      "message": "Bank information deleted successfully"
+    }

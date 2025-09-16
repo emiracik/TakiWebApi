@@ -111,6 +111,17 @@ GET https://localhost:5001/api/faqs/search?searchTerm=how
 GET https://localhost:5001/api/faqs/search?searchTerm=payment
 
 ===========================================
+
+===========================================
+USER RATINGS ENDPOINTS
+===========================================
+GET https://localhost:5001/api/UserRatings
+GET https://localhost:5001/api/UserRatings/{id}
+GET https://localhost:5001/api/UserRatings/user/{userId}
+GET https://localhost:5001/api/UserRatings/driver/{driverId}
+GET https://localhost:5001/api/UserRatings/trip/{tripId}
+GET https://localhost:5001/api/UserRatings/user/{userId}/average
+POST https://localhost:5001/api/UserRatings
 USER CREDIT CARDS ENDPOINTS
 ===========================================
 
@@ -278,4 +289,9 @@ TESTING NOTES
 ===========================================
 USER CREDIT CARD REPOSITORY INTERFACE
 ===========================================
+GET https://localhost:5001/api/TripRatings
+GET https://localhost:5001/api/TripRatings/{id}
+GET https://localhost:5001/api/TripRatings/trip/{tripId}
+GET https://localhost:5001/api/TripRatings/trip/{tripId}/average
+POST https://localhost:5001/api/TripRatings
 

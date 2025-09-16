@@ -51,6 +51,33 @@ CREATE TABLE Drivers (
 );
 
 -- ===============================================
+
+-- USER RATINGS TABLE
+CREATE TABLE UserRatings (
+    UserRatingID int IDENTITY(1,1) PRIMARY KEY,
+    TripID int NOT NULL,
+    RatedUserID int NOT NULL,
+    RatedByDriverID int NOT NULL,
+    Rating decimal(2,1) NOT NULL CHECK (Rating >= 1 AND Rating <= 5),
+    Comment nvarchar(1000) NULL,
+    CreatedBy int NULL,
+    CreatedDate datetime2 NOT NULL DEFAULT GETDATE(),
+    UpdatedBy int NULL,
+    UpdatedDate datetime2 NULL,
+    DeletedBy int NULL,
+    DeletedDate datetime2 NULL,
+    IsDeleted bit NOT NULL DEFAULT 0,
+    -- Foreign Keys
+    FOREIGN KEY (TripID) REFERENCES Trips(TripID),
+    FOREIGN KEY (RatedUserID) REFERENCES Users(UserID),
+    FOREIGN KEY (RatedByDriverID) REFERENCES Drivers(DriverID)
+);
+
+-- USER RATINGS SAMPLE DATA
+INSERT INTO UserRatings (TripID, RatedUserID, RatedByDriverID, Rating, Comment, CreatedBy)
+VALUES (1, 2, 1, 4.5, N'Çok iyi yolcu, zamanında geldi.', 1);
+INSERT INTO UserRatings (TripID, RatedUserID, RatedByDriverID, Rating, Comment, CreatedBy)
+VALUES (2, 3, 2, 5.0, N'Kibar ve sorunsuz.', 2);
 -- TRIPS TABLE
 -- ===============================================
 
@@ -290,6 +317,31 @@ CREATE TABLE Promotions (
     DeletedDate datetime2 NULL,
     IsDeleted bit NOT NULL DEFAULT 0
 );
+
+-- TRIP RATINGS TABLE
+CREATE TABLE TripRatings (
+    TripRatingID int IDENTITY(1,1) PRIMARY KEY,
+    TripID int NOT NULL,
+    RatedByUserID int NOT NULL,
+    Rating decimal(2,1) NOT NULL CHECK (Rating >= 1 AND Rating <= 5),
+    Comment nvarchar(1000) NULL,
+    CreatedBy int NULL,
+    CreatedDate datetime2 NOT NULL DEFAULT GETDATE(),
+    UpdatedBy int NULL,
+    UpdatedDate datetime2 NULL,
+    DeletedBy int NULL,
+    DeletedDate datetime2 NULL,
+    IsDeleted bit NOT NULL DEFAULT 0,
+    -- Foreign Keys
+    FOREIGN KEY (TripID) REFERENCES Trips(TripID),
+    FOREIGN KEY (RatedByUserID) REFERENCES Users(UserID)
+);
+
+-- TRIP RATINGS SAMPLE DATA
+INSERT INTO TripRatings (TripID, RatedByUserID, Rating, Comment, CreatedBy)
+VALUES (1, 2, 4.5, N'Güzel bir yolculuktu.', 2);
+INSERT INTO TripRatings (TripID, RatedByUserID, Rating, Comment, CreatedBy)
+VALUES (2, 3, 5.0, N'Çok memnun kaldım.', 3);
 
 -- ===============================================
 -- INDEXES FOR PERFORMANCE

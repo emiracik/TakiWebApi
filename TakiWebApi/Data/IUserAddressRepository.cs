@@ -16,4 +16,5 @@ public interface IUserAddressRepository
     Task<int> CreateUserAddressAsync(UserAddress userAddress);
     Task<bool> UpdateUserAddressAsync(UserAddress userAddress);
     Task<bool> DeleteUserAddressAsync(int addressId);
+    Task<bool> SetDefaultAddressAsync(int userId, int addressId);
 }

@@ -1,0 +1,65 @@
+# Refresh Token Kullanım Rehberi
+
+## 1. Login (Giriş) İşlemi
+Kullanıcı giriş yaptığında hem JWT (token) hem de refresh token döner.
+
+### İstek:
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "phoneNumber": "05551111111",
+  "password": "password123"
+}
+
+### Yanıt:
+{
+  "success": true,
+  "token": "<jwt-token>",
+  "refreshToken": "<refresh-token>",
+  "userType": "user",
+  "userId": 1,
+  "phoneNumber": "05551111111",
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "message": "Login successful"
+}
+
+## 2. API Çağrılarında JWT Kullanımı
+JWT token ile korumalı endpointlere erişim sağlanır.
+
+### Örnek Header:
+Authorization: Bearer <jwt-token>
+
+## 3. JWT Süresi Dolarsa (Token Expired)
+JWT süresi dolduğunda refresh token ile yeni JWT ve refresh token alınır.
+
+### İstek:
+POST /api/auth/refresh-token
+Content-Type: application/json
+
+"<refresh-token>"
+
+### Yanıt:
+{
+  "token": "<yeni-jwt-token>",
+  "refreshToken": "<yeni-refresh-token>"
+}
+
+## 4. Akış Özeti
+1. Kullanıcı login olur, hem JWT hem refresh token alır.
+2. JWT ile API çağrıları yapılır.
+3. JWT süresi dolarsa, refresh token ile yeni JWT alınır.
+4. Yeni tokenlar ile kullanıma devam edilir.
+
+## 5. Güvenlik Notları
+- Refresh token'ı güvenli saklayın (localStorage, httpOnly cookie vb.).
+- Refresh token çalınırsa, başkası tarafından yeni JWT üretilebilir.
+- Refresh token süresi dolduğunda tekrar login gereklidir.
+
+## 6. Özet Kod Akışı
+- Login: JWT + refresh token döner.
+- /api/auth/refresh-token: Refresh token ile yeni JWT ve refresh token alınır.
+- Tüm endpointlerde JWT kullanılır.
+
+Sorularınız için: emira@takiwebapi.com

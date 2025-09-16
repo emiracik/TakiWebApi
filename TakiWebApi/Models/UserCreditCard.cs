@@ -20,7 +20,11 @@ public class UserCreditCard
     [Range(1, 12)]
     public int? ExpiryMonth { get; set; }
 
+
     public int? ExpiryYear { get; set; }
+
+    [StringLength(30)]
+    public string? CardType { get; set; }
 
     public int? CreatedBy { get; set; }
 

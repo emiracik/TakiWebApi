@@ -68,6 +68,15 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IDriverRatingRepository, DriverRatingRepository>();
 builder.Services.AddScoped<IUserNotificationSettingRepository, UserNotificationSettingRepository>();
 
+builder.Services.AddScoped<IUserRatingRepository, UserRatingRepository>();
+builder.Services.AddScoped<ITripRatingRepository, TripRatingRepository>();
+
+// Register Wallet repository
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+
+// Register RefreshToken repository
+builder.Services.AddSingleton<IRefreshTokenRepository, RefreshTokenRepository>();
+
 // Register JWT service
 builder.Services.AddScoped<IJwtService, JwtService>();
 

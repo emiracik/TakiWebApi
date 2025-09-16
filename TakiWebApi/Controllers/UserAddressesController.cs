@@ -184,4 +184,36 @@ public class UserAddressesController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+
+    [HttpPut("user/{userId}/setdefault/{addressId}")]
+    public async Task<IActionResult> SetDefaultAddress(int userId, int addressId)
+    {
+        try
+        {
+            // Check if the address exists and belongs to the user
+            var existingAddress = await _userAddressRepository.GetUserAddressByIdAsync(addressId);
+            if (existingAddress == null)
+            {
+                return NotFound("Address not found.");
+            }
+
+            if (existingAddress.UserID != userId)
+            {
+                return BadRequest("Address does not belong to the specified user.");
+            }
+
+            var success = await _userAddressRepository.SetDefaultAddressAsync(userId, addressId);
+            
+            if (!success)
+            {
+                return StatusCode(500, "Failed to set default address.");
+            }
+
+            return Ok(new { message = "Default address updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
 }

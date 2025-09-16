@@ -109,11 +109,11 @@ public class UserCreditCardsController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        // CardType is now required in the model and will be passed from the client
         try
         {
             var cardId = await _userCreditCardRepository.CreateUserCreditCardAsync(userCreditCard);
             var createdUserCreditCard = await _userCreditCardRepository.GetUserCreditCardByIdAsync(cardId);
-            
             return CreatedAtAction(nameof(GetUserCreditCard), new { id = cardId }, createdUserCreditCard);
         }
         catch (Exception ex)
@@ -135,6 +135,7 @@ public class UserCreditCardsController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        // CardType is now required in the model and will be passed from the client
         try
         {
             var existingUserCreditCard = await _userCreditCardRepository.GetUserCreditCardByIdAsync(id);
@@ -145,12 +146,10 @@ public class UserCreditCardsController : ControllerBase
 
             userCreditCard.UpdatedDate = DateTime.UtcNow;
             var success = await _userCreditCardRepository.UpdateUserCreditCardAsync(userCreditCard);
-            
             if (!success)
             {
                 return StatusCode(500, "Failed to update user credit card.");
             }
-
             return NoContent();
         }
         catch (Exception ex)

@@ -128,4 +128,11 @@ public class TripsController : ControllerBase
         var totalCost = await _tripRepository.GetTotalTripCostByDateRangeAsync(startDate, endDate);
         return Ok(totalCost);
     }
+
+    [HttpGet("passenger/{passengerId}/total-cost")]
+    public async Task<ActionResult<decimal>> GetTotalTripCostByPassengerId(int passengerId)
+    {
+        var totalCost = await _tripRepository.GetTotalTripCostByPassengerIdAsync(passengerId);
+        return Ok(totalCost);
+    }
 }

@@ -11,25 +11,7 @@
 			"item": [
 				{
 					"name": "User Login",
-					"description": "[API Docs](https://yourapidocs.com/api/Auth/login)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    const response = pm.response.json();",
-									"    if (response.success && response.token) {",
-									"        pm.environment.set('user_token', response.token);",
-									"        pm.environment.set('user_phone', response.phoneNumber);",
-									"        console.log('User token saved:', response.token);",
-									"    }",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
+					"description": "Kullanıcı login. Response: JWT ve refreshToken döner.",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -40,21 +22,66 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"phoneNumber\": \"{{user_phone}}\",\n    \"password\": \"{{user_password}}\"\n}"
+							"raw": "{\n  \"phoneNumber\": \"05551111111\",\n  \"password\": \"password123\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/Auth/login",
+							"raw": "{{base_url}}/api/auth/login",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"Auth",
+								"auth",
 								"login"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"token\": \"<jwt-token>\",\n  \"refreshToken\": \"<refresh-token>\",\n  \"userType\": \"user\",\n  \"userId\": 1,\n  \"phoneNumber\": \"05551111111\",\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"message\": \"Login successful\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"description": "Refresh token ile yeni JWT ve refreshToken alınır.",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "\"<refresh-token>\""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/refresh-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh-token"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"token\": \"<yeni-jwt-token>\",\n  \"refreshToken\": \"<yeni-refresh-token>\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Driver Login",

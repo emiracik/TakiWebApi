@@ -8,7 +8,8 @@ public class WalletTransactionRepository : IWalletTransactionRepository
     private readonly string _connectionString;
     public WalletTransactionRepository(IConfiguration config)
     {
-        _connectionString = config.GetConnectionString("DefaultConnection");
+       _connectionString = config.GetConnectionString("SqlServerConnection")
+                ?? throw new ArgumentNullException(nameof(config), "Connection string cannot be null");
     }
 
     public async Task<IEnumerable<WalletTransaction>> GetAllAsync()
@@ -23,11 +24,12 @@ public class WalletTransactionRepository : IWalletTransactionRepository
             list.Add(new WalletTransaction
             {
                 TransactionID = reader.GetInt32(reader.GetOrdinal("TransactionID")),
+                WalletID = reader.GetInt32(reader.GetOrdinal("WalletID")),
                 UserID = reader.GetInt32(reader.GetOrdinal("UserID")),
                 Amount = reader.GetDecimal(reader.GetOrdinal("Amount")),
                 TransactionType = reader.GetString(reader.GetOrdinal("TransactionType")),
                 Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate"))
+                TransactionDate = reader.GetDateTime(reader.GetOrdinal("TransactionDate"))
             });
         }
         return list;
@@ -45,11 +47,12 @@ public class WalletTransactionRepository : IWalletTransactionRepository
             return new WalletTransaction
             {
                 TransactionID = reader.GetInt32(reader.GetOrdinal("TransactionID")),
+                WalletID = reader.GetInt32(reader.GetOrdinal("WalletID")),
                 UserID = reader.GetInt32(reader.GetOrdinal("UserID")),
                 Amount = reader.GetDecimal(reader.GetOrdinal("Amount")),
                 TransactionType = reader.GetString(reader.GetOrdinal("TransactionType")),
                 Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate"))
+                TransactionDate = reader.GetDateTime(reader.GetOrdinal("TransactionDate"))
             };
         }
         return null;
@@ -59,7 +62,7 @@ public class WalletTransactionRepository : IWalletTransactionRepository
     {
         var list = new List<WalletTransaction>();
         using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand("SELECT * FROM WalletTransactions WHERE UserID = @UserID", connection);
+        using var command = new SqlCommand("SELECT * FROM WalletTransactions WHERE USERID = @UserID", connection);
         command.Parameters.AddWithValue("@UserID", userId);
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
@@ -68,11 +71,12 @@ public class WalletTransactionRepository : IWalletTransactionRepository
             list.Add(new WalletTransaction
             {
                 TransactionID = reader.GetInt32(reader.GetOrdinal("TransactionID")),
+                WalletID = reader.GetInt32(reader.GetOrdinal("WalletID")),
                 UserID = reader.GetInt32(reader.GetOrdinal("UserID")),
                 Amount = reader.GetDecimal(reader.GetOrdinal("Amount")),
                 TransactionType = reader.GetString(reader.GetOrdinal("TransactionType")),
                 Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate"))
+                TransactionDate = reader.GetDateTime(reader.GetOrdinal("TransactionDate"))
             });
         }
         return list;
@@ -82,14 +86,15 @@ public class WalletTransactionRepository : IWalletTransactionRepository
     {
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(
-            @"INSERT INTO WalletTransactions (UserID, Amount, TransactionType, Description, CreatedDate)
-              VALUES (@UserID, @Amount, @TransactionType, @Description, @CreatedDate);
+            @"INSERT INTO WalletTransactions (WalletID, UserID, Amount, TransactionType, Description, TransactionDate)
+              VALUES (@WalletID, @UserID, @Amount, @TransactionType, @Description, @TransactionDate);
               SELECT SCOPE_IDENTITY();", connection);
+        command.Parameters.AddWithValue("@WalletID", transaction.WalletID);
         command.Parameters.AddWithValue("@UserID", transaction.UserID);
         command.Parameters.AddWithValue("@Amount", transaction.Amount);
         command.Parameters.AddWithValue("@TransactionType", transaction.TransactionType);
         command.Parameters.AddWithValue("@Description", (object?)transaction.Description ?? DBNull.Value);
-        command.Parameters.AddWithValue("@CreatedDate", transaction.CreatedDate);
+        command.Parameters.AddWithValue("@TransactionDate", transaction.TransactionDate);
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
         return Convert.ToInt32(result);

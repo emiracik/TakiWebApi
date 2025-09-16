@@ -16,14 +16,16 @@ public class AuthController : ControllerBase
     private readonly IDriverRepository _driverRepository;
     private readonly IPasswordService _passwordService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public AuthController(IJwtService jwtService, IUserRepository userRepository, IDriverRepository driverRepository, IPasswordService passwordService, ILogger<AuthController> logger)
+    public AuthController(IJwtService jwtService, IUserRepository userRepository, IDriverRepository driverRepository, IPasswordService passwordService, ILogger<AuthController> logger, IRefreshTokenRepository refreshTokenRepository)
     {
         _jwtService = jwtService;
         _userRepository = userRepository;
         _driverRepository = driverRepository;
         _passwordService = passwordService;
         _logger = logger;
+        _refreshTokenRepository = refreshTokenRepository;
     }
 
     [HttpPost("login")]
@@ -33,49 +35,47 @@ public class AuthController : ControllerBase
         try
         {
             _logger.LogInformation("🔍 Login attempt for phone: {PhoneNumber}", request.PhoneNumber);
-            
-            // Retrieve user from database
             var user = await _userRepository.GetUserByPhoneNumberAsync(request.PhoneNumber);
             if (user == null)
             {
                 _logger.LogWarning("❌ User not found for phone: {PhoneNumber}", request.PhoneNumber);
                 return Unauthorized(new { Success = false, Message = "Invalid credentials" });
             }
-            _logger.LogWarning("1");
-            // Check if user is active
             if (!user.IsActive || user.IsDeleted)
             {
                 _logger.LogWarning("❌ Inactive or deleted user for phone: {PhoneNumber}", request.PhoneNumber);
                 return Unauthorized(new { Success = false, Message = "Account is not active" });
             }
-
-            // Verify password - ONLY use database password hash
             if (string.IsNullOrEmpty(user.PasswordHash))
             {
                 _logger.LogWarning("❌ No password set for user phone: {PhoneNumber}", request.PhoneNumber);
                 return Unauthorized(new { Success = false, Message = "Invalid credentials" });
             }
-
             bool passwordValid = _passwordService.VerifyPassword(request.Password, user.PasswordHash);
-            _logger.LogWarning(passwordValid.ToString());
-    
             if (passwordValid)
             {
                 _logger.LogInformation("✅ Login successful for phone: {PhoneNumber}", request.PhoneNumber);
-                
                 var additionalClaims = new[]
                 {
                     new Claim("phone_number", user.PhoneNumber),
                     new Claim("role", "user"),
                     new Claim("email", user.Email ?? ""),
-                    new Claim("full_name", user.FullName ?? "")
+                    new Claim("full_name", user.FullName ?? ""),
                 };
                 var token = _jwtService.GenerateToken(user.UserID.ToString(), "user", additionalClaims);
-
+                // Refresh token üretimi
+                var refreshToken = Guid.NewGuid().ToString();
+                await _refreshTokenRepository.SaveRefreshTokenAsync(new Models.RefreshToken
+                {
+                    Token = refreshToken,
+                    UserId = user.UserID,
+                    ExpiryDate = DateTime.UtcNow.AddDays(7)
+                });
                 return Ok(new
                 {
                     Success = true,
                     Token = token,
+                    RefreshToken = refreshToken,
                     UserType = "user",
                     UserId = user.UserID,
                     PhoneNumber = user.PhoneNumber,
@@ -84,7 +84,6 @@ public class AuthController : ControllerBase
                     Message = "Login successful"
                 });
             }
-
             _logger.LogWarning("❌ Invalid password for phone: {PhoneNumber}", request.PhoneNumber);
             return Unauthorized(new { Success = false, Message = "Invalid credentials" });
         }
@@ -93,6 +92,37 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "💥 Error during login for phone: {PhoneNumber}", request.PhoneNumber);
             return StatusCode(500, new { Success = false, Message = ex.Message });
         }
+    }
+    [HttpPost("refresh-token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
+    {
+        var token = await _refreshTokenRepository.GetRefreshTokenAsync(refreshToken);
+        if (token == null)
+            return Unauthorized("Refresh token geçersiz veya süresi dolmuş.");
+
+        var userId = token.UserId;
+        var user = await _userRepository.GetUserByIdAsync(userId);
+        if (user == null)
+            return Unauthorized("Kullanıcı bulunamadı.");
+
+        var additionalClaims = new[]
+        {
+            new Claim("phone_number", user.PhoneNumber),
+            new Claim("role", "user"),
+            new Claim("email", user.Email ?? ""),
+            new Claim("full_name", user.FullName ?? "")
+        };
+        var newJwt = _jwtService.GenerateToken(user.UserID.ToString(), "user", additionalClaims);
+        var newRefreshToken = Guid.NewGuid().ToString();
+        await _refreshTokenRepository.DeleteRefreshTokenAsync(refreshToken);
+        await _refreshTokenRepository.SaveRefreshTokenAsync(new Models.RefreshToken
+        {
+            Token = newRefreshToken,
+            UserId = user.UserID,
+            ExpiryDate = DateTime.UtcNow.AddDays(7)
+        });
+        return Ok(new { token = newJwt, refreshToken = newRefreshToken });
     }
 
     [HttpPost("driver-login")]
