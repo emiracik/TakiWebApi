@@ -1,0 +1,63 @@
+===============================================
+YENİ KULLANICI EKLEME ENDPOINT'İ
+===============================================
+
+🔗 ENDPOINT:
+POST /api/users
+
+🔐 AUTHORIZATION:
+Bearer Token gerekli (JWT)
+
+📤 REQUEST BODY:
+{
+  "fullName": "Ahmet Yılmaz",
+  "phoneNumber": "+905551234567",
+  "email": "ahmet@example.com",
+  "passwordHash": "MTIzNDU2",
+  "userType": "Customer",
+  "isActive": true,
+  "createdBy": 1
+}
+
+📥 RESPONSE (201 Created):
+{
+  "userID": 789,
+  "fullName": "Ahmet Yılmaz",
+  "phoneNumber": "+905551234567",
+  "email": "ahmet@example.com",
+  "passwordHash": "MTIzNDU2",
+  "userType": "Customer",
+  "isActive": true,
+  "createdBy": 1,
+  "createdDate": "2025-09-29T14:30:00Z",
+  "updatedBy": null,
+  "updatedDate": null,
+  "deletedBy": null,
+  "deletedDate": null,
+  "isDeleted": false
+}
+
+❌ HATA RESPONSE (400 Bad Request):
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "FullName": ["The FullName field is required."],
+    "PhoneNumber": ["The PhoneNumber field is required."]
+  }
+}
+
+📋 ZORUNLU ALANLAR:
+- fullName (string) - Kullanıcının tam adı
+- phoneNumber (string) - Telefon numarası (unique)
+- email (string) - E-posta adresi
+- passwordHash (string) - Şifre hash'i (Base64)
+- userType (string) - Kullanıcı tipi (Customer, Admin, vb.)
+- isActive (boolean) - Aktif durumu
+- createdBy (int) - Oluşturan kişinin ID'si
+
+🔧 CONTROLLER: UsersController
+🔧 METHOD: CreateUser
+
+===============================================

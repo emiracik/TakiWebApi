@@ -17,4 +17,5 @@ public interface IUserRepository
     Task<int> CreateUserAsync(User user);
     Task<bool> UpdateUserAsync(User user);
     Task<bool> DeleteUserAsync(int userId);
+    Task<bool> UpdateUserPasswordAsync(int userId, string newPasswordHash);
 }

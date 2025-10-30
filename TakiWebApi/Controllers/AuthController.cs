@@ -347,6 +347,55 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { Success = false, Message = ex.Message });
         }
     }
+
+    [HttpPut("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Get user by ID
+            var user = await _userRepository.GetUserByIdAsync(request.UserId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            // Check if user has a password set
+            if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                return BadRequest(new { message = "User has no password set. Please contact support." });
+            }
+
+            // Verify current password
+            if (!_passwordService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            {
+                return BadRequest(new { message = "Current password is incorrect." });
+            }
+
+            // Hash new password
+            var newPasswordHash = _passwordService.HashPassword(request.NewPassword);
+
+            // Update password
+            var success = await _userRepository.UpdateUserPasswordAsync(request.UserId, newPasswordHash);
+            
+            if (!success)
+            {
+                return StatusCode(500, new { message = "Failed to update password." });
+            }
+
+            return Ok(new { message = "Password changed successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+        }
+    }
 }
 
 public class LoginRequest

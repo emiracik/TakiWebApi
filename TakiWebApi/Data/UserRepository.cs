@@ -40,7 +40,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetUserByIdAsync(int userId)
     {
         const string sql = @"
-            SELECT UserID, FullName, PhoneNumber, Email, IsActive, CreatedBy, CreatedDate, 
+            SELECT UserID, FullName, PhoneNumber, Email, PasswordHash, IsActive, CreatedBy, CreatedDate, 
                    UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Users
             WHERE UserID = @UserId";
@@ -319,6 +319,25 @@ public class UserRepository : IUserRepository
         
         command.Parameters.AddWithValue("@UserID", userId);
         command.Parameters.AddWithValue("@DeletedDate", DateTime.UtcNow);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> UpdateUserPasswordAsync(int userId, string newPasswordHash)
+    {
+        const string sql = @"
+            UPDATE Users 
+            SET PasswordHash = @PasswordHash, UpdatedDate = @UpdatedDate 
+            WHERE UserID = @UserID AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        
+        command.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+        command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 500).Value = newPasswordHash;
+        command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
 
         await connection.OpenAsync();
         var rowsAffected = await command.ExecuteNonQueryAsync();
