@@ -1,0 +1,367 @@
+### TakiWebApi Matching System Testing
+@baseUrl = https://localhost:5001
+@driverId = 1
+@passengerId = 1
+@requestId = 1
+@token = Bearer_Token_Here
+
+# ===========================================
+# NEARBY DRIVERS ENDPOINTS
+# ===========================================
+
+### Get nearby drivers (GET method)
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=5.0&maxResults=10&minRating=4.0
+Authorization: {{token}}
+
+###
+
+### Find nearby drivers (POST method with more filters)
+POST {{baseUrl}}/api/matching/find-nearby-drivers
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "radius": 5.0,
+    "maxResults": 10,
+    "minRating": 4.0
+}
+
+###
+
+# ===========================================
+# AUTO MATCHING ENDPOINTS
+# ===========================================
+
+### Find best match automatically
+POST {{baseUrl}}/api/matching/find-best-match
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "passengerID": 1,
+    "pickupAddress": "Beşiktaş, İstanbul",
+    "dropoffAddress": "Şişli, İstanbul",
+    "pickupLatitude": 41.0428,
+    "pickupLongitude": 29.0094,
+    "dropoffLatitude": 41.0611,
+    "dropoffLongitude": 28.9847,
+    "maxWaitTime": 15.0,
+    "minRating": 4.0,
+    "maxDistance": 10.0,
+    "notes": "Acil değil, güvenli sürücü tercihim var"
+}
+
+###
+
+### Create manual matching request
+POST {{baseUrl}}/api/matching/create-request
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "passengerID": 1,
+    "pickupAddress": "Kadıköy, İstanbul",
+    "dropoffAddress": "Üsküdar, İstanbul",
+    "pickupLatitude": 40.9833,
+    "pickupLongitude": 29.0167,
+    "dropoffLatitude": 41.0167,
+    "dropoffLongitude": 29.0167,
+    "maxWaitTime": 20.0,
+    "minRating": 3.5,
+    "maxDistance": 8.0,
+    "notes": "Havaalanı ulaşımı gerekli",
+    "preferredDrivers": [1, 2, 3]
+}
+
+###
+
+# ===========================================
+# MATCHING REQUEST MANAGEMENT
+# ===========================================
+
+### Get matching request status
+GET {{baseUrl}}/api/matching/request/{{requestId}}/status
+Authorization: {{token}}
+
+###
+
+### Get passenger's all matching requests
+GET {{baseUrl}}/api/matching/passenger/{{passengerId}}/requests
+Authorization: {{token}}
+
+###
+
+### Cancel matching request
+DELETE {{baseUrl}}/api/matching/request/{{requestId}}
+Authorization: {{token}}
+
+###
+
+### Get all pending matching requests
+GET {{baseUrl}}/api/matching/pending-requests
+Authorization: {{token}}
+
+###
+
+# ===========================================
+# DRIVER OPERATIONS
+# ===========================================
+
+### Update driver location
+PUT {{baseUrl}}/api/matching/driver/{{driverId}}/location
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "isAvailable": true,
+    "currentAddress": "Beşiktaş Merkez, İstanbul",
+    "speed": 25.5,
+    "heading": 180.0
+}
+
+###
+
+### Get driver location
+GET {{baseUrl}}/api/matching/driver/{{driverId}}/location
+Authorization: {{token}}
+
+###
+
+### Set driver availability
+PUT {{baseUrl}}/api/matching/driver/{{driverId}}/availability
+Authorization: {{token}}
+Content-Type: application/json
+
+true
+
+###
+
+### Get driver's matching requests
+GET {{baseUrl}}/api/matching/driver/{{driverId}}/requests
+Authorization: {{token}}
+
+###
+
+### Driver accepts matching request
+POST {{baseUrl}}/api/matching/driver/{{driverId}}/accept/{{requestId}}
+Authorization: {{token}}
+
+###
+
+### Driver rejects matching request
+POST {{baseUrl}}/api/matching/driver/{{driverId}}/reject/{{requestId}}
+Authorization: {{token}}
+
+###
+
+# ===========================================
+# ANALYTICS AND STATISTICS
+# ===========================================
+
+### Get active matching requests count
+GET {{baseUrl}}/api/matching/statistics/active-requests
+Authorization: {{token}}
+
+###
+
+### Get available drivers count
+GET {{baseUrl}}/api/matching/statistics/available-drivers
+Authorization: {{token}}
+
+###
+
+### Get all driver locations (Admin only)
+GET {{baseUrl}}/api/matching/all-driver-locations
+Authorization: {{token}}
+
+###
+
+### Get matching requests by date range
+GET {{baseUrl}}/api/matching/requests/date-range?startDate=2024-10-01&endDate=2024-10-31
+Authorization: {{token}}
+
+###
+
+# ===========================================
+# UTILITY OPERATIONS
+# ===========================================
+
+### Calculate distance between two points
+GET {{baseUrl}}/api/matching/calculate-distance?lat1=41.0082&lng1=28.9784&lat2=41.0611&lng2=28.9847
+Authorization: {{token}}
+
+###
+
+### Estimate arrival time
+GET {{baseUrl}}/api/matching/estimate-arrival?distanceKm=5.2&avgSpeed=30.0
+Authorization: {{token}}
+
+###
+
+### Calculate trip cost
+GET {{baseUrl}}/api/matching/calculate-cost?distanceKm=5.2&durationMinutes=15
+Authorization: {{token}}
+
+###
+
+# ===========================================
+# INTEGRATION TEST SCENARIOS
+# ===========================================
+
+### SCENARIO 1: Complete matching workflow
+# 1. Update driver location
+PUT {{baseUrl}}/api/matching/driver/1/location
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "isAvailable": true,
+    "currentAddress": "Beşiktaş Merkez"
+}
+
+###
+
+# 2. Find best match for passenger
+POST {{baseUrl}}/api/matching/find-best-match
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "passengerID": 1,
+    "pickupAddress": "Beşiktaş İskele",
+    "dropoffAddress": "Kabataş Vapur İskelesi",
+    "pickupLatitude": 41.0428,
+    "pickupLongitude": 29.0094,
+    "dropoffLatitude": 41.0611,
+    "dropoffLongitude": 28.9847,
+    "maxWaitTime": 10.0,
+    "minRating": 4.0,
+    "maxDistance": 5.0
+}
+
+###
+
+# 3. Check request status (use requestId from previous response)
+GET {{baseUrl}}/api/matching/request/1/status
+Authorization: {{token}}
+
+###
+
+# 4. Driver accepts the request
+POST {{baseUrl}}/api/matching/driver/1/accept/1
+Authorization: {{token}}
+
+###
+
+### SCENARIO 2: Driver availability management
+# 1. Set driver as available
+PUT {{baseUrl}}/api/matching/driver/2/availability
+Authorization: {{token}}
+Content-Type: application/json
+
+true
+
+###
+
+# 2. Update driver location
+PUT {{baseUrl}}/api/matching/driver/2/location
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "latitude": 40.9833,
+    "longitude": 29.0167,
+    "isAvailable": true,
+    "currentAddress": "Kadıköy Merkez"
+}
+
+###
+
+# 3. Find nearby drivers from Kadıköy
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=40.9833&longitude=29.0167&radius=3.0&maxResults=5
+Authorization: {{token}}
+
+###
+
+### SCENARIO 3: Request cancellation
+# 1. Create a matching request
+POST {{baseUrl}}/api/matching/create-request
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "passengerID": 2,
+    "pickupAddress": "Taksim Meydanı",
+    "dropoffAddress": "Galata Kulesi",
+    "pickupLatitude": 41.0369,
+    "pickupLongitude": 28.9850,
+    "dropoffLatitude": 41.0256,
+    "dropoffLongitude": 28.9744,
+    "maxWaitTime": 25.0,
+    "minRating": 3.0,
+    "maxDistance": 15.0
+}
+
+###
+
+# 2. Cancel the request (use requestId from previous response)
+DELETE {{baseUrl}}/api/matching/request/2
+Authorization: {{token}}
+
+###
+
+# ===========================================
+# ERROR HANDLING TESTS
+# ===========================================
+
+### Test with invalid coordinates
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=200.0&longitude=300.0&radius=5.0
+Authorization: {{token}}
+
+###
+
+### Test with negative radius
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=-5.0
+Authorization: {{token}}
+
+###
+
+### Test with missing required fields
+POST {{baseUrl}}/api/matching/find-best-match
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "passengerID": 1,
+    "pickupAddress": "Test Address"
+    // Missing required fields
+}
+
+###
+
+### Test unauthorized access (without token)
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=5.0
+
+###
+
+# ===========================================
+# PERFORMANCE TESTS
+# ===========================================
+
+### Test with large radius
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=50.0&maxResults=100
+Authorization: {{token}}
+
+###
+
+### Test with many results
+GET {{baseUrl}}/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=20.0&maxResults=50
+Authorization: {{token}}
+
+###

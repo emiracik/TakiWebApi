@@ -1,0 +1,823 @@
+===============================================
+SÜRÜCÜ-KULLANICI EŞLEŞTİRME SİSTEMİ REHBERİ
+TakiWebApi - Driver-User Matching System Guide
+===============================================
+
+Bu rehber, TakiWebApi uygulamasındaki sürücü ve kullanıcı arasındaki eşleştirme sisteminin nasıl çalıştığını, 
+hangi API endpoint'lerinin kullanılacağını ve sistem mimarisini detaylı olarak açıklamaktadır.
+
+===============================================
+1. SİSTEM MİMARİSİ VE VERİTABANI YAPISI
+===============================================
+
+🗃️ ANA TABLOLAR:
+-----------------
+
+1. Users Tablosu:
+   - Yolcu bilgilerini saklar
+   - UserID (Primary Key)
+   - FullName, PhoneNumber, Email
+   - PasswordHash (Authentication için)
+   - IsActive (Aktif kullanıcı kontrolü)
+
+2. Drivers Tablosu:
+   - Sürücü bilgilerini saklar
+   - DriverID (Primary Key)
+   - FullName, PhoneNumber, Email
+   - VehiclePlate, VehicleModel, VehicleColor
+   - PasswordHash (Authentication için)
+
+3. Trips Tablosu (Ana Eşleştirme Tablosu):
+   - Sürücü-yolcu eşleştirmelerini ve yolculuk bilgilerini saklar
+   - TripID (Primary Key)
+   - PassengerID (Foreign Key -> Users.UserID)
+   - DriverID (Foreign Key -> Drivers.DriverID)
+   - StartAddress, EndAddress
+   - StartLatitude, StartLongitude, EndLatitude, EndLongitude
+   - StartTime, EndTime
+   - Cost, PaymentMethod
+   - Status (completed, cancelled, inProgress)
+
+4. UserAddresses Tablosu:
+   - Kullanıcı adres bilgileri
+   - Ev, iş, diğer adresler
+   - Latitude, Longitude bilgileri
+
+5. Rating Tabloları:
+   - DriverRatings: Kullanıcıların sürücüleri değerlendirmesi
+   - UserRatings: Sürücülerin kullanıcıları değerlendirmesi
+   - TripRatings: Yolculuk genel değerlendirmesi
+
+===============================================
+2. EŞLEŞTİRME SİSTEMİ API ENDPOİNT'LERİ
+===============================================
+
+🔍 SÜRÜCÜ BULMA VE FİLTRELEME:
+-------------------------------
+
+Base URL: https://localhost:5001 veya http://localhost:5086
+
+A) Tüm Aktif Sürücüleri Getir:
+   GET /api/drivers/active
+   
+   Açıklama: Sistemdeki tüm aktif sürücüleri döner
+   Response: Driver[] array
+   
+   Örnek:
+   ```
+   GET https://localhost:5001/api/drivers/active
+   
+   Response:
+   [
+     {
+       "driverID": 1,
+       "fullName": "Mehmet Yılmaz",
+       "phoneNumber": "+905556789012",
+       "email": "mehmet@example.com",
+       "vehiclePlate": "34ABC123",
+       "vehicleModel": "Toyota Corolla",
+       "vehicleColor": "Beyaz",
+       "isDeleted": false
+     }
+   ]
+   ```
+
+B) Sürücü Arama (İsim/Plaka):
+   GET /api/drivers/search?searchTerm={arama_terimi}
+   
+   Örnek:
+   GET https://localhost:5001/api/drivers/search?searchTerm=Mehmet
+   GET https://localhost:5001/api/drivers/search?searchTerm=34ABC
+
+C) Belirli Araç Plakasına Göre Sürücü:
+   GET /api/drivers/vehicle-plate/{plaka}
+   
+   Örnek:
+   GET https://localhost:5001/api/drivers/vehicle-plate/34ABC123
+
+D) Sayfalanmış Sürücü Listesi:
+   GET /api/drivers/paginated?pageNumber={sayfa}&pageSize={boyut}
+   
+   Örnek:
+   GET https://localhost:5001/api/drivers/paginated?pageNumber=1&pageSize=10
+
+🔍 KULLANICI BULMA VE FİLTRELEME:
+----------------------------------
+
+A) Tüm Aktif Kullanıcılar:
+   GET /api/users/active
+
+B) Kullanıcı Arama:
+   GET /api/users/search?searchTerm={arama_terimi}
+
+C) Telefon Numarasına Göre Kullanıcı:
+   GET /api/users/phone/{telefon_numarasi}
+
+D) Email'e Göre Kullanıcı:
+   GET /api/users/email/{email}
+
+===============================================
+3. YOLCULUK (TRİP) EŞLEŞTİRME SİSTEMİ
+===============================================
+
+🚕 YENİ YOLCULUK OLUŞTURMA:
+----------------------------
+
+POST /api/trips
+
+Yeni bir yolculuk kaydı oluşturur ve sürücü-yolcu eşleştirmesi yapar.
+
+Request Body:
+```json
+{
+  "passengerID": 1,
+  "driverID": 2,
+  "startAddress": "Beşiktaş, İstanbul",
+  "endAddress": "Şişli, İstanbul",
+  "startLatitude": 41.0428,
+  "startLongitude": 29.0094,
+  "endLatitude": 41.0611,
+  "endLongitude": 28.9847,
+  "startTime": "2024-10-30T14:30:00",
+  "cost": 45.50,
+  "paymentMethod": "CreditCard",
+  "status": "inProgress"
+}
+```
+
+🚕 YOLCULUK SORGULAMA:
+----------------------
+
+A) Yolcunun Tüm Yolculukları:
+   GET /api/trips/passenger/{passengerId}
+   
+   Örnek:
+   GET https://localhost:5001/api/trips/passenger/1
+
+B) Sürücünün Tüm Yolculukları:
+   GET /api/trips/driver/{driverId}
+   
+   Örnek:
+   GET https://localhost:5001/api/trips/driver/2
+
+C) Aktif Yolculuklar:
+   GET /api/trips/active
+
+D) Belirli Tarih Aralığındaki Yolculuklar:
+   GET /api/trips/date-range?startDate={baslangic}&endDate={bitis}
+   
+   Örnek:
+   GET https://localhost:5001/api/trips/date-range?startDate=2024-10-01&endDate=2024-10-31
+
+🚕 YOLCULUK GÜNCELLEME:
+-----------------------
+
+PUT /api/trips/{tripId}
+
+Mevcut yolculuğu günceller (durum değişiklikleri, sürücü değişimi vb.)
+
+Request Body:
+```json
+{
+  "tripID": 1,
+  "status": "completed",
+  "endTime": "2024-10-30T15:00:00",
+  "cost": 47.75
+}
+```
+
+===============================================
+4. EŞLEŞTİRME ALGORİTMASI REHBERİ
+===============================================
+
+⚠️ ÖNEMLİ NOT:
+--------------
+Mevcut API'de otomatik eşleştirme endpoint'leri henüz YOK! 
+Aşağıda önerilen yaklaşım mevcut endpoint'lerle manuel eşleştirme içindir.
+Otomatik eşleştirme için yeni endpoint'ler geliştirilmeli.
+
+🎯 MEVCUT DURUMDA EŞLEŞTİRME METODOLOJİSİ:
+--------------------------------------------
+
+1. YAKINA GÖRE EŞLEŞTİRME (Manuel):
+   - Kullanıcı konumuna en yakın sürücüleri bul
+   - UserAddresses tablosundan kullanıcı konumu
+   - GET /api/drivers/active ile aktif sürücüleri al
+   - Client-side'da mesafe hesaplama algoritması (Haversine formula)
+
+2. MÜSAİTLİK DURUMU KONTROLÜ:
+   - GET /api/trips/active ile aktif yolculukları al
+   - Aktif trip'i olmayan sürücüleri filtrele
+   - GET /api/drivers/active ile sadece aktif sürücüleri al
+
+3. DEĞERLENDİRME PUANI:
+   - GET /api/DriverRatings/driver/{driverId}/average ile ortalama puan
+   - Yüksek puanlı sürücüler öncelik
+
+💡 MEVCUT API'LERLE EŞLEŞTİRME WORKFLOW:
+-----------------------------------------
+
+```
+1. Kullanıcı yolculuk talebi oluşturur
+2. GET /api/drivers/active - Aktif sürücüleri al
+3. GET /api/trips/active - Aktif yolculukları al
+4. Client-side: Müsait sürücüleri filtrele
+5. GET /api/useraddresses/user/{userId} - Kullanıcı konumu
+6. Client-side: Mesafe hesaplama ve sıralama
+7. GET /api/DriverRatings/driver/{id}/average - Her sürücü için rating
+8. Client-side: En uygun sürücü seçimi
+9. POST /api/trips - Yeni trip kaydı oluştur
+10. POST /api/notifications - Bildirimleri gönder
+```
+
+🚀 ÖNERİLEN YENİ ENDPOINT'LER:
+------------------------------
+
+Otomatik eşleştirme için aşağıdaki endpoint'ler eklenmelidir:
+
+1. Yakındaki Müsait Sürücüleri Bulma:
+   POST /api/matching/find-nearby-drivers
+   Request Body:
+   ```json
+   {
+     "latitude": 41.0082,
+     "longitude": 28.9784,
+     "radius": 5.0,
+     "maxResults": 10
+   }
+   ```
+
+2. Otomatik Eşleştirme:
+   POST /api/matching/auto-match
+   Request Body:
+   ```json
+   {
+     "passengerId": 1,
+     "pickupLatitude": 41.0082,
+     "pickupLongitude": 28.9784,
+     "dropoffLatitude": 41.0128,
+     "dropoffLongitude": 28.9744,
+     "preferredDrivers": [2, 5, 8]
+   }
+   ```
+
+3. Eşleştirme Durumu Kontrolü:
+   GET /api/matching/status/{matchingId}
+
+4. Eşleştirme İptal:
+   DELETE /api/matching/{matchingId}
+
+===============================================
+5. DEĞERLENDİRME SİSTEMİ
+===============================================
+
+⭐ SÜRÜCÜ DEĞERLENDİRME:
+------------------------
+
+A) Sürücüyü Değerlendir:
+   POST /api/DriverRatings
+   
+   Request Body:
+   ```json
+   {
+     "tripID": 1,
+     "driverID": 2,
+     "userID": 1,
+     "rating": 4.5,
+     "comment": "Çok güvenli sürüş, zamanında geldi"
+   }
+   ```
+
+B) Sürücünün Ortalama Puanı:
+   GET /api/DriverRatings/driver/{driverId}/average
+
+C) Sürücünün Tüm Değerlendirmeleri:
+   GET /api/DriverRatings/driver/{driverId}
+
+⭐ KULLANICI DEĞERLENDİRME:
+---------------------------
+
+A) Kullanıcıyı Değerlendir:
+   POST /api/UserRatings
+   
+   Request Body:
+   ```json
+   {
+     "tripID": 1,
+     "ratedUserID": 1,
+     "ratedByDriverID": 2,
+     "rating": 5.0,
+     "comment": "Kibar ve zamanında hazır olan yolcu"
+   }
+   ```
+
+B) Kullanıcının Ortalama Puanı:
+   GET /api/UserRatings/user/{userId}/average
+
+===============================================
+6. GERÇEK ZAMALI TAKİP SİSTEMİ
+===============================================
+
+🔄 REAL-TIME UPDATES:
+---------------------
+
+A) Aktif Yolculukları İzle:
+   GET /api/trips/active
+   
+   Bu endpoint'i düzenli aralıklarla çağırarak aktif yolculukları takip edebilirsiniz.
+
+B) Yolculuk Durumu Güncelleme:
+   PUT /api/trips/{tripId}
+   
+   Status değerlerini güncelleyerek gerçek zamanlı durum takibi yapılabilir:
+   - "inProgress": Yolculuk devam ediyor
+   - "completed": Yolculuk tamamlandı
+   - "cancelled": Yolculuk iptal edildi
+
+===============================================
+7. BİLDİRİM SİSTEMİ
+===============================================
+
+🔔 NOTIFICATION API:
+--------------------
+
+A) Kullanıcıya Bildirim Gönder:
+   POST /api/notifications
+   
+   Request Body:
+   ```json
+   {
+     "title": "Sürücü Bulundu!",
+     "message": "Mehmet Yılmaz (34ABC123) sizi bekliyor.",
+     "userID": 1,
+     "notificationType": "TripMatch"
+   }
+   ```
+
+B) Sürücüye Bildirim Gönder:
+   POST /api/notifications
+   
+   Request Body:
+   ```json
+   {
+     "title": "Yeni Yolculuk Talebi",
+     "message": "Ahmet Yılmaz size yolculuk talebi gönderdi.",
+     "driverID": 2,
+     "notificationType": "TripRequest"
+   }
+   ```
+
+C) Kullanıcı Bildirimleri:
+   GET /api/notifications/user/{userId}
+
+D) Sürücü Bildirimleri:
+   GET /api/notifications/driver/{driverId}
+
+===============================================
+8. ÖDEME VE FATURA SİSTEMİ
+===============================================
+
+💰 ÖDEME İŞLEMLERİ:
+-------------------
+
+A) Kullanıcı Cüzdan Bakiyesi:
+   GET /api/wallet/{userId}
+
+B) Cüzdana Para Yükle:
+   POST /api/wallet/{userId}/deposit
+   
+   Request Body:
+   ```json
+   {
+     "amount": 100.00,
+     "description": "Cüzdana para yükleme"
+   }
+   ```
+
+C) Yolculuk Ödemesi:
+   POST /api/wallet/{userId}/withdraw
+   
+   Request Body:
+   ```json
+   {
+     "amount": 45.50,
+     "description": "Yolculuk ücreti - Trip #123"
+   }
+   ```
+
+💳 KREDİ KARTI İŞLEMLERİ:
+-------------------------
+
+A) Kullanıcı Kredi Kartları:
+   GET /api/usercreditcards/user/{userId}
+
+B) Yeni Kredi Kartı Ekle:
+   POST /api/usercreditcards
+   
+   Request Body:
+   ```json
+   {
+     "userID": 1,
+     "cardHolderName": "Ahmet Yılmaz",
+     "cardNumberMasked": "**** **** **** 1234",
+     "expiryMonth": 12,
+     "expiryYear": 2026,
+     "isDefault": true
+   }
+   ```
+
+📄 FATURA SİSTEMİ:
+------------------
+
+A) Kullanıcı Faturaları:
+   GET /api/invoices/user/{userId}
+
+B) Yolculuk Faturası Oluştur:
+   POST /api/invoices
+   
+   Request Body:
+   ```json
+   {
+     "userID": 1,
+     "tripID": 123,
+     "amount": 45.50,
+     "status": "Paid"
+   }
+   ```
+
+===============================================
+9. AUTHENTICATION & AUTHORİZATİON
+===============================================
+
+🔐 GİRİŞ SİSTEMİ:
+-----------------
+
+A) Kullanıcı Girişi:
+   POST /api/auth/login
+   
+   Request Body:
+   ```json
+   {
+     "phoneNumber": "+905551234567",
+     "password": "123456"
+   }
+   ```
+
+B) Sürücü Girişi:
+   POST /api/auth/driver-login
+   
+   Request Body:
+   ```json
+   {
+     "phoneNumber": "+905556789012",
+     "password": "driver123"
+   }
+   ```
+
+C) Token Yenileme:
+   POST /api/auth/refresh-token
+
+D) Token Doğrulama:
+   POST /api/auth/validate
+
+🔒 AUTHORIZATION:
+-----------------
+
+Tüm API endpoint'leri Authorization header'ı gerektirir:
+
+```
+Authorization: Bearer {token}
+```
+
+Örnek:
+```
+GET https://localhost:5001/api/trips/active
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+===============================================
+10. ÖRNEK KULLANIM SENARYOLARI
+===============================================
+
+🎭 SENARYO 1: YENİ YOLCULUK TALEBİ
+-----------------------------------
+
+1. Kullanıcı giriş yapar:
+   POST /api/auth/login
+   
+2. Kullanıcı konumunu belirler (mevcut adresi):
+   GET /api/useraddresses/user/1
+   
+3. Sistem aktif sürücüleri bulur:
+   GET /api/drivers/active
+   
+4. En uygun sürücü seçilir ve yolculuk oluşturulur:
+   POST /api/trips
+   
+5. Her iki tarafa da bildirim gönderilir:
+   POST /api/notifications (kullanıcıya)
+   POST /api/notifications (sürücüye)
+
+🎭 SENARYO 2: YOLCULUK TAKİBİ
+------------------------------
+
+1. Aktif yolculukları kontrol et:
+   GET /api/trips/active
+   
+2. Belirli yolculuk detayını al:
+   GET /api/trips/123
+   
+3. Yolculuk durumunu güncelle:
+   PUT /api/trips/123
+   
+4. Yolculuk tamamlandığında ödeme işlemi:
+   POST /api/wallet/1/withdraw
+
+🎭 SENARYO 3: DEĞERLENDİRME SİSTEMİ
+------------------------------------
+
+1. Yolculuk tamamlandıktan sonra sürücüyü değerlendir:
+   POST /api/DriverRatings
+   
+2. Sürücü kullanıcıyı değerlendirir:
+   POST /api/UserRatings
+   
+3. Genel yolculuk değerlendirmesi:
+   POST /api/TripRatings
+
+===============================================
+11. PERFORMANS VE OPTİMİZASYON
+===============================================
+
+📊 VERİTABANI İNDEKSLER:
+------------------------
+
+Sistem performansı için önemli indeksler:
+- Users: PhoneNumber, Email, IsDeleted
+- Drivers: PhoneNumber, VehiclePlate, IsDeleted
+- Trips: PassengerID, DriverID, StartTime, IsDeleted
+
+🚀 PERFORMANS İPUÇLARI:
+-----------------------
+
+1. Sayfalama kullanın:
+   GET /api/drivers/paginated?pageNumber=1&pageSize=20
+
+2. Tarih aralığı sınırlayın:
+   GET /api/trips/date-range?startDate=2024-10-01&endDate=2024-10-31
+
+3. Aktif kayıtları filtreleyin:
+   GET /api/drivers/active yerine GET /api/drivers kullanmayın
+
+4. Önbellek stratejisi kullanın (Redis önerilir)
+
+===============================================
+12. HATA YÖNETİMİ VE DURUM KODLARI
+===============================================
+
+📋 HTTP STATUS KODLARI:
+-----------------------
+
+- 200 OK: İşlem başarılı
+- 201 Created: Yeni kayıt oluşturuldu
+- 400 Bad Request: Geçersiz veri
+- 401 Unauthorized: Kimlik doğrulama gerekli
+- 403 Forbidden: Yetki yok
+- 404 Not Found: Kayıt bulunamadı
+- 500 Internal Server Error: Sunucu hatası
+
+🛠️ HATA YAKALAMA:
+------------------
+
+```javascript
+try {
+    const response = await fetch('/api/trips/active', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const trips = await response.json();
+    // İşlem başarılı
+} catch (error) {
+    console.error('Yolculuklar alınamadı:', error);
+    // Hata yönetimi
+}
+```
+
+===============================================
+13. ÖNERİLEN EŞLEŞTİRME ENDPOINT'LERİ (GELİŞTİRİLMELİ)
+===============================================
+
+⚠️ MEVCUT DURUM: Bu endpoint'ler henüz mevcut değil, geliştirilmesi gerekiyor!
+
+🎯 TEMEL EŞLEŞTİRME API'LERİ:
+------------------------------
+
+1. Yakındaki Müsait Sürücüler:
+   GET /api/matching/nearby-drivers?lat={lat}&lng={lng}&radius={km}
+   
+   Response:
+   ```json
+   [
+     {
+       "driverId": 1,
+       "fullName": "Mehmet Yılmaz",
+       "vehiclePlate": "34ABC123",
+       "distance": 0.8,
+       "averageRating": 4.7,
+       "isAvailable": true,
+       "estimatedArrival": "3 dakika"
+     }
+   ]
+   ```
+
+2. Otomatik En İyi Eşleştirme:
+   POST /api/matching/find-best-match
+   
+   Request:
+   ```json
+   {
+     "passengerId": 1,
+     "pickupLatitude": 41.0082,
+     "pickupLongitude": 28.9784,
+     "dropoffLatitude": 41.0128,
+     "dropoffLongitude": 28.9744,
+     "preferences": {
+       "maxWaitTime": 10,
+       "minRating": 4.0,
+       "maxDistance": 5.0
+     }
+   }
+   ```
+
+3. Eşleştirme Talebi Oluştur:
+   POST /api/matching/create-request
+   
+   Request:
+   ```json
+   {
+     "passengerId": 1,
+     "driverId": 2,
+     "pickupAddress": "Beşiktaş Merkez",
+     "dropoffAddress": "Şişli AVM",
+     "estimatedCost": 45.50,
+     "requestType": "immediate"
+   }
+   ```
+
+4. Eşleştirme Durumu:
+   GET /api/matching/request/{requestId}/status
+   
+   Response:
+   ```json
+   {
+     "requestId": 123,
+     "status": "pending", // pending, accepted, rejected, cancelled
+     "driverId": 2,
+     "estimatedArrival": "5 dakika",
+     "createdAt": "2024-10-30T14:30:00"
+   }
+   ```
+
+🚗 SÜRÜCÜ EŞLEŞTİRME ENDPOINT'LERİ:
+------------------------------------
+
+5. Sürücü Talep Listesi:
+   GET /api/matching/driver/{driverId}/requests
+   
+   Response:
+   ```json
+   [
+     {
+       "requestId": 123,
+       "passengerId": 1,
+       "passengerName": "Ahmet Yılmaz",
+       "pickupAddress": "Beşiktaş",
+       "dropoffAddress": "Şişli",
+       "distance": 8.2,
+       "estimatedCost": 45.50,
+       "createdAt": "2024-10-30T14:30:00"
+     }
+   ]
+   ```
+
+6. Sürücü Talebi Kabul Et:
+   POST /api/matching/driver/{driverId}/accept/{requestId}
+
+7. Sürücü Talebi Reddet:
+   POST /api/matching/driver/{driverId}/reject/{requestId}
+
+8. Sürücü Müsaitlik Durumu:
+   PUT /api/matching/driver/{driverId}/availability
+   
+   Request:
+   ```json
+   {
+     "isAvailable": true,
+     "currentLatitude": 41.0082,
+     "currentLongitude": 28.9784
+   }
+   ```
+
+===============================================
+14. GELİŞTİRİLMESİ ÖNERİLEN İLERI SEVİYE ÖZELLİKLER
+===============================================
+
+🔮 İLERI SEVİYE ÖZELLİKLER:
+---------------------------
+
+1. Gerçek Zamanlı Konum Takibi:
+   - WebSocket bağlantısı
+   - GPS koordinat güncellemeleri
+   - Harita entegrasyonu
+   - GET /api/tracking/live-location/{tripId}
+
+2. Akıllı Eşleştirme Algoritması:
+   - Machine Learning tabanlı tahmin
+   - Trafik yoğunluğu analizi
+   - Geçmiş veriler üzerinden optimizasyon
+   - POST /api/matching/smart-match (AI destekli)
+
+3. Dinamik Fiyatlandırma:
+   - Yoğunluk bazlı fiyat ayarlaması
+   - Mesafe ve süre hesaplaması
+   - Promo kod ve indirim sistemi
+   - GET /api/pricing/dynamic-rate
+
+4. Toplu Eşleştirme (Batch Matching):
+   - Aynı güzergahtaki kullanıcıları grupla
+   - POST /api/matching/batch-requests
+   - Maliyet optimizasyonu
+
+5. Çoklu Dil Desteği:
+   - API response'larında dil seçeneği
+   - Hata mesajlarının çevirisi
+
+6. Push Notification Sistemi:
+   - Firebase/FCM entegrasyonu
+   - Real-time bildirimler
+   - Bildirim geçmişi
+
+===============================================
+14. TEST VE DEBUGGING
+===============================================
+
+🧪 TEST ENDPOİNT'LERİ:
+----------------------
+
+Geliştirme ortamında test için hazır URL'ler:
+
+```
+# Kullanıcılar
+GET https://localhost:5001/api/users/active
+GET https://localhost:5001/api/users/1
+
+# Sürücüler  
+GET https://localhost:5001/api/drivers/active
+GET https://localhost:5001/api/drivers/search?searchTerm=Mehmet
+
+# Yolculuklar
+GET https://localhost:5001/api/trips/active
+GET https://localhost:5001/api/trips/passenger/1
+GET https://localhost:5001/api/trips/driver/1
+
+# Değerlendirmeler
+GET https://localhost:5001/api/DriverRatings/driver/1/average
+```
+
+🔍 DEBUGGİNG İPUÇLARI:
+----------------------
+
+1. API Response'ları kontrol edin
+2. Authorization token'ını doğrulayın
+3. Request body formatını kontrol edin
+4. Network tab'ı kullanarak HTTP istekleri inceleyin
+5. Server log'larını takip edin
+
+===============================================
+SONUÇ
+===============================================
+
+Bu rehber, TakiWebApi sistemindeki sürücü-kullanıcı eşleştirme mekanizmasının 
+tüm detaylarını kapsar. Sistem modüler yapıda tasarlanmış olup, her bir bileşen 
+bağımsız olarak geliştirilebilir ve test edilebilir.
+
+Ana özellikler:
+✅ Kullanıcı ve sürücü yönetimi
+✅ Yolculuk eşleştirme sistemi  
+✅ Değerlendirme ve puanlama
+✅ Ödeme ve fatura sistemi
+✅ Bildirim servisi
+✅ Authentication & Authorization
+✅ Real-time tracking hazırlığı
+
+Herhangi bir sorunuz olursa, API dokümantasyonunu inceleyebilir veya 
+test endpoint'lerini kullanarak sistemi deneyebilirsiniz.
+
+İyi kodlamalar! 🚀

@@ -77,6 +77,9 @@ builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 // Register RefreshToken repository
 builder.Services.AddSingleton<IRefreshTokenRepository, RefreshTokenRepository>();
 
+// Register Matching repository - NEW MATCHING SYSTEM
+builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
+
 // Register JWT service
 builder.Services.AddScoped<IJwtService, JwtService>();
 

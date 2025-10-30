@@ -1,0 +1,620 @@
+===============================================
+SÜRÜCÜ-KULLANICI EŞLEŞTİRME SİSTEMİ KULLANIM REHBERİ
+TakiWebApi - Driver-User Matching System Usage Guide
+===============================================
+
+Bu rehber, yeni geliştirilen eşleştirme sisteminin nasıl kullanılacağını adım adım açıklamaktadır.
+
+===============================================
+1. SİSTEM KURULUMU VE BAŞLATMA
+===============================================
+
+🗄️ VERİTABANI KURULUMU:
+------------------------
+1. SQL Server Management Studio'yu açın
+2. TaxiDb veritabanına bağlanın
+3. CreateMatchingTables.sql dosyasını çalıştırın:
+
+```sql
+-- Dosya konumu: /TakiWebApi/CreateMatchingTables.sql
+USE TaxiDb;
+-- Script'i tamamen çalıştırın
+```
+
+4. Başarılı kurulum mesajını kontrol edin:
+```
+✅ Matching system database tables created successfully!
+📊 Created tables: MatchingRequests, DriverLocations
+```
+
+🚀 UYGULAMAYI BAŞLATMA:
+-----------------------
+1. Terminal'i açın ve proje klasörüne gidin:
+```bash
+cd c:\Users\emira\Documents\GitHub\TakiWebApi\TakiWebApi
+```
+
+2. Uygulamayı çalıştırın:
+```bash
+dotnet run
+```
+
+3. Başarılı başlatma mesajlarını kontrol edin:
+```
+✅ Database connection successful!
+📊 Connected to: TaxiDb
+🌐 Now listening on: https://localhost:5001
+```
+
+===============================================
+2. TEMEL KULLANIM SENARYOLARI
+===============================================
+
+🎯 SENARYO 1: YAKINDAKI SÜRÜCÜLERİ BULMA
+------------------------------------------
+
+**Amaç:** Belirli konumda yakındaki müsait sürücüleri listelemek
+
+**API Endpoint:**
+```http
+GET /api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=5.0&maxResults=10&minRating=4.0
+Authorization: Bearer {token}
+```
+
+**Parametreler:**
+- `latitude`: Enlem koordinatı (zorunlu)
+- `longitude`: Boylam koordinatı (zorunlu)  
+- `radius`: Arama yarıçapı km (varsayılan: 5.0)
+- `maxResults`: Maksimum sonuç sayısı (varsayılan: 10)
+- `minRating`: Minimum sürücü puanı (opsiyonel)
+
+**Örnek Yanıt:**
+```json
+[
+  {
+    "driverID": 1,
+    "fullName": "Mehmet Yılmaz",
+    "phoneNumber": "+905556789012",
+    "vehiclePlate": "34ABC123",
+    "vehicleModel": "Toyota Corolla",
+    "vehicleColor": "Beyaz",
+    "distance": 0.8,
+    "averageRating": 4.7,
+    "totalRatings": 25,
+    "isAvailable": true,
+    "estimatedArrival": "3 dakika",
+    "latitude": 41.0082,
+    "longitude": 28.9784
+  }
+]
+```
+
+**Nasıl Test Edilir:**
+1. Postman veya VS Code REST Client kullanın
+2. Matching.http dosyasındaki "Get nearby drivers" endpoint'ini çalıştırın
+3. Koordinatları İstanbul'dan bir nokta olarak ayarlayın
+
+---
+
+🎯 SENARYO 2: OTOMATİK EŞLEŞTİRME
+----------------------------------
+
+**Amaç:** Yolcu için en uygun sürücüyü otomatik bulup eşleştirmek
+
+**API Endpoint:**
+```http
+POST /api/matching/find-best-match
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**İstek Gövdesi:**
+```json
+{
+    "passengerID": 1,
+    "pickupAddress": "Beşiktaş, İstanbul",
+    "dropoffAddress": "Şişli, İstanbul",
+    "pickupLatitude": 41.0428,
+    "pickupLongitude": 29.0094,
+    "dropoffLatitude": 41.0611,
+    "dropoffLongitude": 28.9847,
+    "maxWaitTime": 15.0,
+    "minRating": 4.0,
+    "maxDistance": 10.0,
+    "notes": "Acil değil, güvenli sürücü tercihim var"
+}
+```
+
+**Yanıt:**
+```json
+{
+    "matchingRequestID": 123,
+    "status": "Pending",
+    "driverID": 2,
+    "driverName": "Mehmet Yılmaz",
+    "vehiclePlate": "34ABC123",
+    "driverPhone": "+905556789012",
+    "distance": 0.8,
+    "estimatedCost": 45.50,
+    "estimatedArrival": "3 dakika",
+    "requestTime": "2024-10-30T14:30:00Z",
+    "message": "En uygun sürücü bulundu ve talep oluşturuldu."
+}
+```
+
+**Adım Adım Kullanım:**
+1. Yolcunun konum bilgilerini alın
+2. Varış adresini belirleyin
+3. API'yi çağırın
+4. Dönen `matchingRequestID`'yi kaydedin
+5. Talep durumunu takip edin
+
+---
+
+🎯 SENARYO 3: SÜRÜCÜ KONUM GÜNCELLEMESİ
+---------------------------------------
+
+**Amaç:** Sürücünün konumunu ve müsaitlik durumunu güncellemek
+
+**API Endpoint:**
+```http
+PUT /api/matching/driver/{driverId}/location
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**İstek Gövdesi:**
+```json
+{
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "isAvailable": true,
+    "currentAddress": "Beşiktaş Merkez, İstanbul",
+    "speed": 25.5,
+    "heading": 180.0
+}
+```
+
+**Kullanım Durumları:**
+- Sürücü uygulaması açıldığında
+- GPS konum değişikliklerinde (her 30 saniyede)
+- Müsaitlik durumu değişikliklerinde
+- Yolculuk başlangıç/bitişinde
+
+---
+
+🎯 SENARYO 4: TALEBİ KABUL ETME/REDDETME
+----------------------------------------
+
+**Sürücü Talebi Kabul Eder:**
+```http
+POST /api/matching/driver/{driverId}/accept/{requestId}
+Authorization: Bearer {token}
+```
+
+**Sürücü Talebi Reddeder:**
+```http
+POST /api/matching/driver/{driverId}/reject/{requestId}
+Authorization: Bearer {token}
+```
+
+**Yanıt (Kabul):**
+```json
+{
+    "matchingRequestID": 123,
+    "status": "Accepted",
+    "driverID": 2,
+    "requestTime": "2024-10-30T14:30:00Z",
+    "acceptedTime": "2024-10-30T14:32:00Z",
+    "message": "Talep başarıyla kabul edildi."
+}
+```
+
+===============================================
+3. ADIM ADIM KULLANIM REHBERİ
+===============================================
+
+📱 YOLCU UYGULAMASI İÇİN WORKFLOW:
+----------------------------------
+
+**Adım 1: Giriş Yap**
+```http
+POST /api/auth/login
+{
+    "phoneNumber": "+905551234567",
+    "password": "123456"
+}
+```
+
+**Adım 2: Konumu Al**
+- GPS'den mevcut konum
+- Veya kayıtlı adreslerden seç:
+```http
+GET /api/useraddresses/user/{userId}
+```
+
+**Adım 3: Yakındaki Sürücüleri Gör**
+```http
+GET /api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=5.0
+```
+
+**Adım 4: Yolculuk Talebi Oluştur**
+```http
+POST /api/matching/find-best-match
+{
+    "passengerID": 1,
+    "pickupAddress": "Mevcut konum",
+    "dropoffAddress": "Hedef adres",
+    ...
+}
+```
+
+**Adım 5: Talep Durumunu İzle**
+```http
+GET /api/matching/request/{requestId}/status
+```
+
+**Adım 6: Sürücü Bilgilerini Al**
+- Kabul edildikten sonra sürücü detayları gösterilir
+
+**Adım 7: Yolculuk Tamamlandığında**
+- Sürücüyü değerlendir
+- Ödemeyi gerçekleştir
+
+---
+
+🚗 SÜRÜCÜ UYGULAMASI İÇİN WORKFLOW:
+-----------------------------------
+
+**Adım 1: Giriş Yap**
+```http
+POST /api/auth/driver-login
+{
+    "phoneNumber": "+905556789012",
+    "password": "driver123"
+}
+```
+
+**Adım 2: Çevrimiçi Ol**
+```http
+PUT /api/matching/driver/{driverId}/availability
+true
+```
+
+**Adım 3: Konumu Güncelle**
+```http
+PUT /api/matching/driver/{driverId}/location
+{
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "isAvailable": true
+}
+```
+
+**Adım 4: Gelen Talepleri Kontrol Et**
+```http
+GET /api/matching/driver/{driverId}/requests
+```
+
+**Adım 5: Talep Geldiğinde Karar Ver**
+- Kabul et: `POST /api/matching/driver/{id}/accept/{requestId}`
+- Reddet: `POST /api/matching/driver/{id}/reject/{requestId}`
+
+**Adım 6: Yolculuk Sırasında**
+- Konumu düzenli güncelle
+- Müsaitlik durumunu "false" yap
+
+**Adım 7: Yolculuk Bitiminde**
+- Müsaitlik durumunu "true" yap
+- Yolcuyu değerlendir
+
+===============================================
+4. GERÇEK ZAMANLI TEST REHBERİ
+===============================================
+
+🧪 TEST SENARYOSU 1: TAM EŞLEŞTİRME SÜRECİ
+-------------------------------------------
+
+**1. Sürücü Hazırlığı:**
+```http
+PUT https://localhost:5001/api/matching/driver/1/location
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "latitude": 41.0082,
+    "longitude": 28.9784,
+    "isAvailable": true,
+    "currentAddress": "Beşiktaş Merkez"
+}
+```
+
+**2. Yakındaki Sürücüleri Kontrol:**
+```http
+GET https://localhost:5001/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=5.0
+Authorization: Bearer {token}
+```
+
+**3. Otomatik Eşleştirme:**
+```http
+POST https://localhost:5001/api/matching/find-best-match
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "passengerID": 1,
+    "pickupAddress": "Beşiktaş İskele",
+    "dropoffAddress": "Kabataş Vapur İskelesi",
+    "pickupLatitude": 41.0428,
+    "pickupLongitude": 29.0094,
+    "dropoffLatitude": 41.0611,
+    "dropoffLongitude": 28.9847,
+    "maxWaitTime": 10.0,
+    "minRating": 4.0,
+    "maxDistance": 5.0
+}
+```
+
+**4. Talep Durumu Kontrolü:**
+```http
+GET https://localhost:5001/api/matching/request/{requestId}/status
+Authorization: Bearer {token}
+```
+
+**5. Sürücü Kabul Eder:**
+```http
+POST https://localhost:5001/api/matching/driver/1/accept/{requestId}
+Authorization: Bearer {token}
+```
+
+**Beklenen Sonuç:** Status "Accepted" olmalı ve sürücü "unavailable" olmalı.
+
+---
+
+🧪 TEST SENARYOSU 2: ÇOKLU SÜRÜCÜ TESTİ
+---------------------------------------
+
+**1. Birden Fazla Sürücüyü Çevrimiçi Yap:**
+```http
+# Sürücü 1
+PUT https://localhost:5001/api/matching/driver/1/location
+# Sürücü 2  
+PUT https://localhost:5001/api/matching/driver/2/location
+# Sürücü 3
+PUT https://localhost:5001/api/matching/driver/3/location
+```
+
+**2. Yakındaki Tüm Sürücüleri Listele:**
+```http
+GET https://localhost:5001/api/matching/nearby-drivers?latitude=41.0082&longitude=28.9784&radius=10.0&maxResults=20
+```
+
+**3. En İyi Eşleştirmeyi Test Et:**
+```http
+POST https://localhost:5001/api/matching/find-best-match
+```
+
+**Beklenen Sonuç:** En yakın ve en yüksek puanlı sürücü seçilmeli.
+
+===============================================
+5. HATA DURULARI VE ÇÖZÜMLERİ
+===============================================
+
+❌ YAYGN HATALAR VE ÇÖZÜMLERİ:
+------------------------------
+
+**Hata 1: "Yakında müsait sürücü bulunamadı"**
+```json
+{
+    "status": "Rejected",
+    "message": "Yakında müsait sürücü bulunamadı."
+}
+```
+
+**Çözüm:**
+- Arama yarıçapını artırın (radius=10.0)
+- Minimum rating'i düşürün
+- Sürücülerin çevrimiçi olduğunu kontrol edin
+
+**Hata 2: "401 Unauthorized"**
+```json
+{
+    "status": 401,
+    "message": "Unauthorized"
+}
+```
+
+**Çözüm:**
+- Token'ın doğru olduğunu kontrol edin
+- Token'ın süresi dolmuş olabilir
+- Yeniden giriş yapın
+
+**Hata 3: "Sürücü şu anda müsait değil"**
+```json
+{
+    "message": "Sürücü şu anda müsait değil."
+}
+```
+
+**Çözüm:**
+- Sürücünün availability durumunu kontrol edin
+- Sürücünün başka bir aktif yolculuğu olabilir
+
+**Hata 4: "Geçersiz koordinat"**
+```json
+{
+    "errors": {
+        "latitude": ["The field latitude must be between -90 and 90."]
+    }
+}
+```
+
+**Çözüm:**
+- Koordinatları kontrol edin (lat: -90 to 90, lng: -180 to 180)
+- Türkiye için yaklaşık: lat=41.0, lng=29.0
+
+===============================================
+6. İSTATİSTİKLER VE İZLEME
+===============================================
+
+📊 SİSTEM İSTATİSTİKLERİ:
+-------------------------
+
+**Aktif Talep Sayısı:**
+```http
+GET /api/matching/statistics/active-requests
+```
+
+**Müsait Sürücü Sayısı:**
+```http
+GET /api/matching/statistics/available-drivers  
+```
+
+**Günlük Rapor:**
+```http
+GET /api/matching/requests/date-range?startDate=2024-10-30&endDate=2024-10-30
+```
+
+**Tüm Sürücü Konumları (Admin):**
+```http
+GET /api/matching/all-driver-locations
+Authorization: Bearer {admin_token}
+```
+
+===============================================
+7. PERFORMANS OPTİMİZASYONU
+===============================================
+
+⚡ PERFORMANS İPUÇLARI:
+----------------------
+
+**1. Konum Güncellemeleri:**
+- Sürücü konumunu 30 saniyede bir güncelleyin
+- Hızlı hareket halindeyken 15 saniyede bir
+
+**2. Arama Optimizasyonu:**
+- Radius'u 20km'den fazla yapmayın
+- MaxResults'ı 50'den fazla yapmayın
+
+**3. Cache Stratejisi:**
+- Yakındaki sürücüler 30 saniye cache'lenebilir
+- İstatistikler 5 dakika cache'lenebilir
+
+**4. Database Maintenance:**
+```sql
+-- Eski talepleri temizle
+EXEC dbo.CleanupExpiredRequests;
+
+-- Çevrimdışı sürücüleri güncelle  
+EXEC dbo.UpdateOfflineDrivers;
+```
+
+===============================================
+8. GÜVENLİK VE YETKİLENDİRME
+===============================================
+
+🔐 GÜVENLİK KURALLARI:
+----------------------
+
+**1. Token Kullanımı:**
+- Her istekte Authorization header gerekli
+- Token süresi: 24 saat
+- Refresh token ile yenileyin
+
+**2. Roller ve İzinler:**
+- `User`: Yolcu işlemleri
+- `Driver`: Sürücü işlemleri  
+- `Admin`: Tüm işlemler + raporlar
+
+**3. Data Validation:**
+- Koordinatlar otomatik validasyona tabi
+- Mesafeler ve maliyetler server'da hesaplanır
+- Client'tan gelen veriler güvenilmez
+
+===============================================
+9. SORUN GİDERME REHBERİ
+===============================================
+
+🔧 ADIM ADIM SORUN GİDERME:
+---------------------------
+
+**1. API Çalışmıyor:**
+```bash
+# Uygulamanın çalıştığını kontrol et
+curl https://localhost:5001/api/matching/statistics/available-drivers
+
+# Database bağlantısını test et
+dotnet run
+```
+
+**2. Sürücü Görünmüyor:**
+```sql
+-- Database'de sürücü konumlarını kontrol et
+SELECT * FROM DriverLocations WHERE IsOnline = 1;
+SELECT * FROM vw_AvailableDrivers;
+```
+
+**3. Eşleştirme Çalışmıyor:**
+```http
+# Debug için adım adım test et
+GET /api/drivers/active
+GET /api/matching/nearby-drivers?lat=41&lng=29&radius=50
+```
+
+**4. Performance Problemi:**
+```sql
+-- İndeksleri kontrol et
+SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('DriverLocations');
+```
+
+===============================================
+10. PRODUCTION HAZIRLIK LİSTESİ
+===============================================
+
+✅ PRODUCTION ÖNCESİ KONTROL:
+-----------------------------
+
+**Database:**
+- [ ] Tüm tablolar oluşturuldu
+- [ ] İndeksler mevcut
+- [ ] Stored procedure'ler çalışıyor
+- [ ] Sample data temizlendi
+
+**API:**
+- [ ] Tüm endpoint'ler test edildi
+- [ ] Authorization çalışıyor
+- [ ] Error handling doğru
+- [ ] Logging aktif
+
+**Performance:**
+- [ ] Database performance test edildi
+- [ ] API response time'ları kontrol edildi
+- [ ] Memory usage normal
+- [ ] Connection pooling aktif
+
+**Security:**
+- [ ] HTTPS aktif
+- [ ] JWT secret güvenli
+- [ ] Rate limiting eklendi
+- [ ] Input validation tam
+
+===============================================
+SONUÇ
+===============================================
+
+Bu rehberle sürücü-kullanıcı eşleştirme sistemini başarıyla kullanabilirsiniz!
+
+🎯 **Ana Özellikler:**
+✅ Gerçek zamanlı konum takibi
+✅ Akıllı mesafe hesaplama  
+✅ Otomatik en iyi eşleştirme
+✅ Rating bazlı filtreleme
+✅ Dinamik maliyet hesaplama
+✅ Comprehensive API
+
+📞 **Destek İçin:**
+- API dokümantasyonu: `/swagger` endpoint'i
+- Test dosyaları: `Matching.http`
+- Database: `CreateMatchingTables.sql`
+
+**İyi kullanımlar!** 🚀
