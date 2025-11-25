@@ -174,7 +174,7 @@ public class MatchingRepository : IMatchingRepository
                 d.DriverID, d.FullName, d.PhoneNumber, d.VehiclePlate, d.VehicleModel, d.VehicleColor,
                 dl.Latitude, dl.Longitude, dl.IsAvailable,
                 COALESCE(AVG(CAST(dr.Rating as FLOAT)), 0) as AverageRating,
-                COUNT(dr.RatingID) as TotalRatings
+                COUNT(dr.DriverRatingID) as TotalRatings
             FROM Drivers d
             INNER JOIN DriverLocations dl ON d.DriverID = dl.DriverID
             LEFT JOIN DriverRatings dr ON d.DriverID = dr.DriverID AND dr.IsDeleted = 0

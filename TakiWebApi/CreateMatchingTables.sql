@@ -143,7 +143,7 @@ BEGIN
              COS(RADIANS(@lat1)) * COS(RADIANS(@lat2)) * 
              SIN(@dLng / 2) * SIN(@dLng / 2);
     
-    SET @c = 2 * ATAN2(SQRT(@a), SQRT(1 - @a));
+    SET @c = 2 * ATN2(SQRT(@a), SQRT(1 - @a));
     SET @distance = @earthRadius * @c;
 
     RETURN @distance;
@@ -174,7 +174,7 @@ BEGIN
         dl.LocationTime,
         dbo.CalculateDistance(@Latitude, @Longitude, dl.Latitude, dl.Longitude) AS Distance,
         COALESCE(AVG(CAST(dr.Rating as FLOAT)), 0) as AverageRating,
-        COUNT(dr.RatingID) as TotalRatings
+        COUNT(dr.DriverRatingID) as TotalRatings
     FROM Drivers d
     INNER JOIN DriverLocations dl ON d.DriverID = dl.DriverID
     LEFT JOIN DriverRatings dr ON d.DriverID = dr.DriverID AND dr.IsDeleted = 0
@@ -352,7 +352,7 @@ SELECT
     dl.CurrentAddress,
     dl.LocationTime,
     COALESCE(AVG(CAST(dr.Rating as FLOAT)), 0) as AverageRating,
-    COUNT(dr.RatingID) as TotalRatings
+    COUNT(dr.DriverRatingID) as TotalRatings
 FROM Drivers d
 INNER JOIN DriverLocations dl ON d.DriverID = dl.DriverID
 LEFT JOIN DriverRatings dr ON d.DriverID = dr.DriverID AND dr.IsDeleted = 0
