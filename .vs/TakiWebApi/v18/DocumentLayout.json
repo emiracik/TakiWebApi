@@ -1,0 +1,189 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\takiwebapi.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\takiwebapi.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\data\\matchingrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\data\\matchingrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\takiwebapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\takiwebapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\testurls.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\testurls.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|c:\\users\\erenh\\documents\\github\\takiwebapi\\takiwebapi\\data\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96EE8E71-E347-9E4C-2D9E-2EC5125533C0}|TakiWebApi\\TakiWebApi.csproj|solutionrelative:takiwebapi\\data\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Program.cs",
+              "RelativeDocumentMoniker": "TakiWebApi\\Program.cs",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Program.cs",
+              "RelativeToolTip": "TakiWebApi\\Program.cs",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T20:06:12.14Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "TakiWebApi\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "TakiWebApi\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T20:02:42.319Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "TakiWebApi\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "TakiWebApi\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T20:02:35.459Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "TakiWebApi",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
+              "RelativeDocumentMoniker": "TakiWebApi\\TakiWebApi.csproj",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
+              "RelativeToolTip": "TakiWebApi\\TakiWebApi.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-28T19:48:30.916Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MatchingRepository.cs",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Data\\MatchingRepository.cs",
+              "RelativeDocumentMoniker": "TakiWebApi\\Data\\MatchingRepository.cs",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Data\\MatchingRepository.cs",
+              "RelativeToolTip": "TakiWebApi\\Data\\MatchingRepository.cs",
+              "ViewState": "AgIAAHsBAAAAAAAAAAAxwJEBAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T19:42:08.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "appsettings.Development.json",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\appsettings.Development.json",
+              "RelativeDocumentMoniker": "TakiWebApi\\appsettings.Development.json",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\appsettings.Development.json",
+              "RelativeToolTip": "TakiWebApi\\appsettings.Development.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAC4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-28T19:38:09.509Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\appsettings.json",
+              "RelativeDocumentMoniker": "TakiWebApi\\appsettings.json",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\appsettings.json",
+              "RelativeToolTip": "TakiWebApi\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAC4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-28T19:38:00.468Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "TakiWebApi",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
+              "RelativeDocumentMoniker": "TakiWebApi\\TakiWebApi.csproj",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
+              "RelativeToolTip": "TakiWebApi\\TakiWebApi.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-28T19:37:45.428Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "TestUrls.txt",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TestUrls.txt",
+              "RelativeDocumentMoniker": "TakiWebApi\\TestUrls.txt",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TestUrls.txt",
+              "RelativeToolTip": "TakiWebApi\\TestUrls.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-06-28T19:37:30.478Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "UserRepository.cs",
+              "DocumentMoniker": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Data\\UserRepository.cs",
+              "RelativeDocumentMoniker": "TakiWebApi\\Data\\UserRepository.cs",
+              "ToolTip": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\Data\\UserRepository.cs",
+              "RelativeToolTip": "TakiWebApi\\Data\\UserRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-28T19:37:24.15Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

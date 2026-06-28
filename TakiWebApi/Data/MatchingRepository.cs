@@ -399,7 +399,7 @@ public class MatchingRepository : IMatchingRepository
 
     public async Task<double> GetDriverAverageRatingAsync(int driverId)
     {
-        return await _driverRatingRepository.GetAverageRatingByDriverIdAsync(driverId);
+        return (double)await _driverRatingRepository.GetAverageRatingByDriverIdAsync(driverId);
     }
 
     #endregion
