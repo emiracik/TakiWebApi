@@ -5,9 +5,10 @@ namespace TakiWebApi.Models;
 
 public enum RideStatus
 {
-    completed,
-    cancelled,
-    inProgress
+    completed,          // 0
+    cancelled,          // 1
+    inProgress,         // 2
+    awaitingConfirmation // 3 - sürücü bitirdi, yolcu onayı bekleniyor
 }
 
 [Table("Trips")]

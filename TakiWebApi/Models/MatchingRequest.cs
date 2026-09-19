@@ -5,11 +5,12 @@ namespace TakiWebApi.Models;
 
 public enum MatchingStatus
 {
-    Pending,
-    Accepted,
-    Rejected,
-    Cancelled,
-    Expired
+    Pending,        // 0
+    Accepted,       // 1
+    Rejected,       // 2
+    Cancelled,      // 3
+    Expired,        // 4
+    CounterOffered  // 5 - sürücü karşı teklif verdi, yolcu onayı bekleniyor
 }
 
 [Table("MatchingRequests")]

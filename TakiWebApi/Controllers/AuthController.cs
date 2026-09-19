@@ -4,6 +4,7 @@ using TakiWebApi.Services;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
 using System.Security.Claims;
+using Google.Apis.Auth;
 
 namespace TakiWebApi.Controllers;
 
@@ -17,8 +18,9 @@ public class AuthController : ControllerBase
     private readonly IPasswordService _passwordService;
     private readonly ILogger<AuthController> _logger;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(IJwtService jwtService, IUserRepository userRepository, IDriverRepository driverRepository, IPasswordService passwordService, ILogger<AuthController> logger, IRefreshTokenRepository refreshTokenRepository)
+    public AuthController(IJwtService jwtService, IUserRepository userRepository, IDriverRepository driverRepository, IPasswordService passwordService, ILogger<AuthController> logger, IRefreshTokenRepository refreshTokenRepository, IConfiguration configuration)
     {
         _jwtService = jwtService;
         _userRepository = userRepository;
@@ -26,6 +28,7 @@ public class AuthController : ControllerBase
         _passwordService = passwordService;
         _logger = logger;
         _refreshTokenRepository = refreshTokenRepository;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -93,6 +96,103 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { Success = false, Message = ex.Message });
         }
     }
+    [HttpPost("google-login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        try
+        {
+            var webClientId = _configuration["GoogleAuth:WebClientId"];
+            if (string.IsNullOrEmpty(webClientId))
+            {
+                _logger.LogError("❌ GoogleAuth:WebClientId appsettings içinde tanımlı değil");
+                return StatusCode(500, new { Success = false, Message = "Google login yapılandırılmamış" });
+            }
+
+            GoogleJsonWebSignature.Payload payload;
+            try
+            {
+                payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken,
+                    new GoogleJsonWebSignature.ValidationSettings { Audience = new[] { webClientId } });
+            }
+            catch (InvalidJwtException ex)
+            {
+                _logger.LogWarning("❌ Geçersiz Google idToken: {Message}", ex.Message);
+                return Unauthorized(new { Success = false, Message = "Geçersiz Google token" });
+            }
+
+            if (!payload.EmailVerified)
+            {
+                return Unauthorized(new { Success = false, Message = "Google e-postası doğrulanmamış" });
+            }
+
+            var user = await _userRepository.GetUserByEmailAsync(payload.Email);
+            if (user == null)
+            {
+                var placeholderPhone = $"G{payload.Subject}";
+                if (placeholderPhone.Length > 20) placeholderPhone = placeholderPhone.Substring(0, 20);
+
+                var newUser = new User
+                {
+                    FullName = payload.Name ?? payload.Email,
+                    PhoneNumber = placeholderPhone,
+                    Email = payload.Email,
+                    PasswordHash = null,
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+                var newUserId = await _userRepository.CreateUserAsync(newUser);
+                user = await _userRepository.GetUserByIdAsync(newUserId);
+                _logger.LogInformation("✅ Google ile yeni kullanıcı oluşturuldu: {Email}", payload.Email);
+            }
+
+            if (user == null)
+            {
+                return StatusCode(500, new { Success = false, Message = "Kullanıcı oluşturulamadı" });
+            }
+
+            if (!user.IsActive || user.IsDeleted)
+            {
+                return Unauthorized(new { Success = false, Message = "Hesap aktif değil" });
+            }
+
+            var additionalClaims = new[]
+            {
+                new Claim("phone_number", user.PhoneNumber),
+                new Claim("role", "user"),
+                new Claim("email", user.Email ?? ""),
+                new Claim("full_name", user.FullName ?? ""),
+            };
+            var token = _jwtService.GenerateToken(user.UserID.ToString(), "user", additionalClaims);
+            var refreshToken = Guid.NewGuid().ToString();
+            await _refreshTokenRepository.SaveRefreshTokenAsync(new Models.RefreshToken
+            {
+                Token = refreshToken,
+                UserId = user.UserID,
+                ExpiryDate = DateTime.UtcNow.AddDays(7)
+            });
+
+            return Ok(new
+            {
+                Success = true,
+                Token = token,
+                RefreshToken = refreshToken,
+                UserType = "user",
+                UserId = user.UserID,
+                PhoneNumber = user.PhoneNumber,
+                FullName = user.FullName,
+                Email = user.Email,
+                Message = "Login successful"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "💥 Google login sırasında hata");
+            return StatusCode(500, new { Success = false, Message = ex.Message });
+        }
+    }
+
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
@@ -402,6 +502,11 @@ public class LoginRequest
 {
     public string PhoneNumber { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+}
+
+public class GoogleLoginRequest
+{
+    public string IdToken { get; set; } = string.Empty;
 }
 
 public class RegisterRequest

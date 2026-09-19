@@ -261,16 +261,17 @@ public class UserRepository : IUserRepository
     public async Task<int> CreateUserAsync(User user)
     {
         const string sql = @"
-            INSERT INTO Users (FullName, PhoneNumber, Email, IsActive, CreatedDate, IsDeleted)
-            VALUES (@FullName, @PhoneNumber, @Email, @IsActive, @CreatedDate, @IsDeleted);
+            INSERT INTO Users (FullName, PhoneNumber, Email, PasswordHash, IsActive, CreatedDate, IsDeleted)
+            VALUES (@FullName, @PhoneNumber, @Email, @PasswordHash, @IsActive, @CreatedDate, @IsDeleted);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        
+
         command.Parameters.AddWithValue("@FullName", user.FullName ?? string.Empty);
         command.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber ?? string.Empty);
         command.Parameters.AddWithValue("@Email", user.Email ?? string.Empty);
+        command.Parameters.AddWithValue("@PasswordHash", (object?)user.PasswordHash ?? DBNull.Value);
         command.Parameters.AddWithValue("@IsActive", user.IsActive);
         command.Parameters.AddWithValue("@CreatedDate", user.CreatedDate);
         command.Parameters.AddWithValue("@IsDeleted", user.IsDeleted);

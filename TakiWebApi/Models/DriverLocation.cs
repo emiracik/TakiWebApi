@@ -71,6 +71,11 @@ public class MatchingResponse
     public DateTime RequestTime { get; set; }
     public DateTime? AcceptedTime { get; set; }
     public string Message { get; set; } = string.Empty;
+
+    // Talep kabul edildiğinde oluşturulan gerçek yolculuk (Trips) kaydının
+    // ID'si — yolculuk bitirildiğinde/tekrar açıldığında bu kayda geri
+    // dönebilmek için (geçmiş, kazanç, puanlama).
+    public int? TripID { get; set; }
 }
 
 public class FindNearbyDriversRequest
@@ -119,6 +124,14 @@ public class CreateMatchingRequest
     public double? MaxWaitTime { get; set; } = 15.0; // minutes
     public double? MinRating { get; set; } = 3.0;
     public double? MaxDistance { get; set; } = 10.0; // km
+
+    // Araç sınıfı: "economy" (Sarı Taksi), "comfort" (Turkuaz), "premium" (Siyah/Lüks).
+    // Verilmezse "economy" tarifesi uygulanır.
+    public string? VehicleType { get; set; }
+
+    // Yolcunun kendi önerdiği ücret (teklif sistemi). Doluysa ve pozitifse,
+    // hesaplanan tarife yerine bu tutar geçerli olur (örn. "400 TL'ye götürür müsün?").
+    public decimal? OfferedFare { get; set; }
     public string? Notes { get; set; }
     public List<int>? PreferredDrivers { get; set; }
 }

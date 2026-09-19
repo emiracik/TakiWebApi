@@ -279,6 +279,129 @@ public class TripRepository : ITripRepository
         return result != DBNull.Value ? Convert.ToDecimal(result) : 0;
     }
 
+    public async Task<Trip> CreateTripAsync(Trip trip)
+    {
+        const string sql = @"
+            INSERT INTO Trips (PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+                EndLatitude, EndLongitude, StartTime, Cost, PaymentMethod, Distance, Status, CreatedDate, IsDeleted)
+            VALUES (@PassengerID, @DriverID, @StartAddress, @EndAddress, @StartLatitude, @StartLongitude,
+                @EndLatitude, @EndLongitude, @StartTime, @Cost, @PaymentMethod, @Distance, @Status, @CreatedDate, 0);
+            SELECT CAST(SCOPE_IDENTITY() as int);";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@PassengerID", (object?)trip.PassengerID ?? DBNull.Value);
+        command.Parameters.AddWithValue("@DriverID", (object?)trip.DriverID ?? DBNull.Value);
+        command.Parameters.AddWithValue("@StartAddress", (object?)trip.StartAddress ?? DBNull.Value);
+        command.Parameters.AddWithValue("@EndAddress", (object?)trip.EndAddress ?? DBNull.Value);
+        command.Parameters.AddWithValue("@StartLatitude", (object?)trip.StartLatitude ?? DBNull.Value);
+        command.Parameters.AddWithValue("@StartLongitude", (object?)trip.StartLongitude ?? DBNull.Value);
+        command.Parameters.AddWithValue("@EndLatitude", (object?)trip.EndLatitude ?? DBNull.Value);
+        command.Parameters.AddWithValue("@EndLongitude", (object?)trip.EndLongitude ?? DBNull.Value);
+        command.Parameters.AddWithValue("@StartTime", (object?)trip.StartTime ?? DateTime.UtcNow);
+        command.Parameters.AddWithValue("@Cost", (object?)trip.Cost ?? DBNull.Value);
+        command.Parameters.AddWithValue("@PaymentMethod", (object?)trip.PaymentMethod ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Distance", (object?)trip.Distance ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Status", trip.Status?.ToString() ?? RideStatus.inProgress.ToString());
+        command.Parameters.AddWithValue("@CreatedDate", DateTime.UtcNow);
+
+        await connection.OpenAsync();
+        var newId = (int)(await command.ExecuteScalarAsync() ?? 0);
+        trip.TripID = newId;
+        return trip;
+    }
+
+    public async Task<bool> CompleteTripAsync(int tripId, decimal? finalCost)
+    {
+        const string sql = @"
+            UPDATE Trips
+            SET Status = @Status,
+                EndTime = @EndTime,
+                Cost = ISNULL(@Cost, Cost),
+                UpdatedDate = @UpdatedDate
+            WHERE TripID = @TripId AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Status", RideStatus.completed.ToString());
+        command.Parameters.AddWithValue("@EndTime", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@Cost", (object?)finalCost ?? DBNull.Value);
+        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@TripId", tripId);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> DriverFinishTripAsync(int tripId, decimal? finalCost)
+    {
+        const string sql = @"
+            UPDATE Trips
+            SET Status = @Status,
+                EndTime = @EndTime,
+                Cost = ISNULL(@Cost, Cost),
+                UpdatedDate = @UpdatedDate
+            WHERE TripID = @TripId AND IsDeleted = 0 AND Status = @InProgress";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Status", RideStatus.awaitingConfirmation.ToString());
+        command.Parameters.AddWithValue("@EndTime", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@Cost", (object?)finalCost ?? DBNull.Value);
+        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@TripId", tripId);
+        command.Parameters.AddWithValue("@InProgress", RideStatus.inProgress.ToString());
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> SetPaymentMethodAsync(int tripId, string paymentMethod)
+    {
+        const string sql = @"
+            UPDATE Trips
+            SET PaymentMethod = @PaymentMethod, UpdatedDate = @UpdatedDate
+            WHERE TripID = @TripId AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@PaymentMethod", paymentMethod);
+        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@TripId", tripId);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
+    public async Task<Trip?> GetActiveTripByDriverIdAsync(int driverId)
+    {
+        // "Aktif" = hâlâ devam ediyor VEYA sürücü bitirdi ama yolcu onayı bekleniyor.
+        const string sql = @"
+            SELECT TOP 1 TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
+                EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
+                CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
+            FROM Trips
+            WHERE DriverID = @DriverId AND Status IN (@InProgress, @Awaiting) AND IsDeleted = 0
+            ORDER BY StartTime DESC";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@DriverId", driverId);
+        command.Parameters.AddWithValue("@InProgress", RideStatus.inProgress.ToString());
+        command.Parameters.AddWithValue("@Awaiting", RideStatus.awaitingConfirmation.ToString());
+
+        await connection.OpenAsync();
+        using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return MapTripFromReader(reader);
+        }
+        return null;
+    }
+
     private static Trip MapTripFromReader(SqlDataReader reader)
     {
         return new Trip

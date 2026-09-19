@@ -12,11 +12,13 @@ namespace TakiWebApi.Controllers;
 public class MatchingController : ControllerBase
 {
     private readonly IMatchingRepository _matchingRepository;
+    private readonly ITripRepository _tripRepository;
     private readonly ILogger<MatchingController> _logger;
 
-    public MatchingController(IMatchingRepository matchingRepository, ILogger<MatchingController> logger)
+    public MatchingController(IMatchingRepository matchingRepository, ITripRepository tripRepository, ILogger<MatchingController> logger)
     {
         _matchingRepository = matchingRepository;
+        _tripRepository = tripRepository;
         _logger = logger;
     }
 
@@ -133,7 +135,9 @@ public class MatchingController : ControllerBase
                 request.DropoffLatitude, request.DropoffLongitude);
 
             var estimatedDuration = await _matchingRepository.EstimateArrivalTimeAsync(tripDistance);
-            var estimatedCost = await _matchingRepository.CalculateEstimatedCostAsync(tripDistance, estimatedDuration);
+            var calculatedCost = await _matchingRepository.CalculateEstimatedCostAsync(tripDistance, estimatedDuration, request.VehicleType);
+            var isCustomOffer = request.OfferedFare.HasValue && request.OfferedFare.Value > 0;
+            var estimatedCost = isCustomOffer ? request.OfferedFare!.Value : calculatedCost;
 
             var matchingRequest = new MatchingRequest
             {
@@ -364,19 +368,138 @@ public class MatchingController : ControllerBase
             }
 
             var response = await _matchingRepository.AcceptMatchingRequestAsync(driverId, requestId);
-            
+
             if (response.Status == MatchingStatus.Accepted)
             {
-                // Set driver as unavailable
-                await _matchingRepository.SetDriverAvailabilityAsync(driverId, false);
+                await CreateTripForAcceptedRequestAsync(response, requestId, driverId);
             }
-            
+
             return Ok(response);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error accepting matching request {requestId} by driver {driverId}");
             return StatusCode(500, "Talep kabul edilirken bir hata oluştu.");
+        }
+    }
+
+    /// <summary>
+    /// Sürücü, bekleyen bir talebe kabul yerine kendi fiyatını önerir
+    /// (karşı teklif). Yolcu bu teklifi kabul/red edene kadar talep bu
+    /// sürücüye "ayrılmış" olur.
+    /// </summary>
+    [HttpPost("driver/{driverId}/counter/{requestId}")]
+    public async Task<ActionResult<MatchingResponse>> DriverCounterOffer(int driverId, int requestId, [FromBody] decimal amount)
+    {
+        try
+        {
+            if (amount <= 0)
+            {
+                return BadRequest("Geçerli bir tutar giriniz.");
+            }
+            var isAvailable = await _matchingRepository.IsDriverAvailableAsync(driverId);
+            if (!isAvailable)
+            {
+                return BadRequest("Sürücü şu anda müsait değil.");
+            }
+
+            // Sürücünün absürt (çok düşük/çok yüksek) teklif vermesini engelle —
+            // yolcunun istediği/hesaplanan ücretin %100 - %150 aralığıyla sınırla.
+            var existingRequest = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
+            if (existingRequest?.EstimatedCost is decimal baseFare && baseFare > 0)
+            {
+                var minAllowed = Math.Round(baseFare * 1.0m, 2);
+                var maxAllowed = Math.Round(baseFare * 1.5m, 2);
+                if (amount < minAllowed || amount > maxAllowed)
+                {
+                    return BadRequest($"Teklif ₺{minAllowed:0} ile ₺{maxAllowed:0} arasında olmalı.");
+                }
+            }
+
+            var response = await _matchingRepository.DriverCounterOfferAsync(driverId, requestId, amount);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error making counter offer for request {requestId} by driver {driverId}");
+            return StatusCode(500, "Teklif gönderilirken bir hata oluştu.");
+        }
+    }
+
+    /// <summary>
+    /// Yolcu, sürücünün karşı teklifini kabul eder — yolculuk başlar.
+    /// </summary>
+    [HttpPost("request/{requestId}/counter/accept")]
+    public async Task<ActionResult<MatchingResponse>> AcceptCounterOffer(int requestId)
+    {
+        try
+        {
+            var response = await _matchingRepository.RespondToCounterOfferAsync(requestId, true);
+            if (response.Status == MatchingStatus.Accepted && response.DriverID is int driverId)
+            {
+                await CreateTripForAcceptedRequestAsync(response, requestId, driverId);
+            }
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error accepting counter offer for request {requestId}");
+            return StatusCode(500, "Teklif kabul edilirken bir hata oluştu.");
+        }
+    }
+
+    /// <summary>
+    /// Yolcu, sürücünün karşı teklifini reddeder — görüşme/talep biter.
+    /// </summary>
+    [HttpPost("request/{requestId}/counter/reject")]
+    public async Task<ActionResult<MatchingResponse>> RejectCounterOffer(int requestId)
+    {
+        try
+        {
+            var response = await _matchingRepository.RespondToCounterOfferAsync(requestId, false);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error rejecting counter offer for request {requestId}");
+            return StatusCode(500, "Teklif reddedilirken bir hata oluştu.");
+        }
+    }
+
+    // Kabul edilen bir talep için gerçek Trip kaydını oluşturur ve sürücüyü
+    // meşgul yapar — hem normal kabul hem karşı-teklif-kabul akışında
+    // kullanılıyor.
+    private async Task CreateTripForAcceptedRequestAsync(MatchingResponse response, int requestId, int driverId)
+    {
+        await _matchingRepository.SetDriverAvailabilityAsync(driverId, false);
+        try
+        {
+            var matchingRequest = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
+            if (matchingRequest != null)
+            {
+                var trip = await _tripRepository.CreateTripAsync(new Trip
+                {
+                    PassengerID = matchingRequest.PassengerID,
+                    DriverID = driverId,
+                    StartAddress = matchingRequest.PickupAddress,
+                    EndAddress = matchingRequest.DropoffAddress,
+                    StartLatitude = matchingRequest.PickupLatitude,
+                    StartLongitude = matchingRequest.PickupLongitude,
+                    EndLatitude = matchingRequest.DropoffLatitude,
+                    EndLongitude = matchingRequest.DropoffLongitude,
+                    StartTime = DateTime.UtcNow,
+                    Cost = matchingRequest.EstimatedCost,
+                    Distance = matchingRequest.EstimatedDistance,
+                    Status = RideStatus.inProgress
+                });
+                response.TripID = trip.TripID;
+            }
+        }
+        catch (Exception tripEx)
+        {
+            // Trip kaydı oluşturulamasa bile eşleştirme kabulü geçerli
+            // kalsın — sadece logla.
+            _logger.LogError(tripEx, $"Trip kaydı oluşturulamadı (requestId={requestId})");
         }
     }
 
@@ -552,11 +675,12 @@ public class MatchingController : ControllerBase
     [HttpGet("calculate-cost")]
     public async Task<ActionResult<decimal>> CalculateCost(
         [FromQuery, Required] double distanceKm,
-        [FromQuery, Required] double durationMinutes)
+        [FromQuery, Required] double durationMinutes,
+        [FromQuery] string? vehicleType = null)
     {
         try
         {
-            var cost = await _matchingRepository.CalculateEstimatedCostAsync(distanceKm, durationMinutes);
+            var cost = await _matchingRepository.CalculateEstimatedCostAsync(distanceKm, durationMinutes, vehicleType);
             return Ok(cost);
         }
         catch (Exception ex)
@@ -579,6 +703,7 @@ public class MatchingController : ControllerBase
             MatchingStatus.Rejected => "Talep reddedildi",
             MatchingStatus.Cancelled => "Talep iptal edildi",
             MatchingStatus.Expired => "Talep süresi doldu",
+            MatchingStatus.CounterOffered => "Sürücü karşı teklif verdi",
             _ => "Bilinmeyen durum"
         };
     }

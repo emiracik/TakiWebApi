@@ -31,8 +31,13 @@ public interface IMatchingRepository
     
     Task<MatchingResponse> CancelMatchingRequestAsync(int requestId);
 
+    // Sürücü karşı teklif sistemi: sürücü bekleyen bir talebe kabul yerine
+    // kendi fiyatını önerebilir; yolcu bunu kabul/red eder.
+    Task<MatchingResponse> DriverCounterOfferAsync(int driverId, int requestId, decimal amount);
+    Task<MatchingResponse> RespondToCounterOfferAsync(int requestId, bool accept);
+
     // Utility Operations
-    Task<decimal> CalculateEstimatedCostAsync(double distanceKm, double durationMinutes);
+    Task<decimal> CalculateEstimatedCostAsync(double distanceKm, double durationMinutes, string? vehicleType = null);
     Task<double> CalculateDistanceAsync(double lat1, double lng1, double lat2, double lng2);
     Task<int> EstimateArrivalTimeAsync(double distanceKm, double avgSpeed = 30.0);
     Task<bool> IsDriverAvailableAsync(int driverId);

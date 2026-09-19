@@ -36,6 +36,39 @@
                 "${workspaceFolder}/TakiWebApi/TakiWebApi.csproj"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Publish to IIS (Web Deploy)",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "publish",
+                "${workspaceFolder}/TakiWebApi/TakiWebApi.csproj",
+                "-c", "Release",
+                "-p:PublishProfile=WebDeploy",
+                "-p:Password=$env:TAKI_DEPLOY_PASSWORD"
+            ],
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Publish to IIS (Folder/UNC)",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "publish",
+                "${workspaceFolder}/TakiWebApi/TakiWebApi.csproj",
+                "-c", "Release",
+                "-p:PublishProfile=FolderProfile"
+            ],
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
         }
     ]
 }

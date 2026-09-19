@@ -63,7 +63,7 @@ public class DriverRepository : IDriverRepository
     public async Task<Driver?> GetDriverByPhoneNumberAsync(string phoneNumber)
     {
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE PhoneNumber = @PhoneNumber";
@@ -86,7 +86,7 @@ public class DriverRepository : IDriverRepository
     public async Task<Driver?> GetDriverByEmailAsync(string email)
     {
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE Email = @Email";
@@ -134,7 +134,7 @@ public class DriverRepository : IDriverRepository
     {
         var drivers = new List<Driver>();
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             ORDER BY CreatedDate DESC
@@ -186,7 +186,7 @@ public class DriverRepository : IDriverRepository
     {
         var drivers = new List<Driver>();
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE FullName LIKE @SearchTerm
@@ -211,7 +211,7 @@ public class DriverRepository : IDriverRepository
     {
         var drivers = new List<Driver>();
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE CreatedDate >= @StartDate AND CreatedDate <= @EndDate
@@ -237,7 +237,7 @@ public class DriverRepository : IDriverRepository
     {
         var drivers = new List<Driver>();
         const string sql = @"
-            SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor,
+            SELECT DriverID, FullName, PhoneNumber, Email, PasswordHash, VehiclePlate, VehicleModel, VehicleColor,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Drivers
             WHERE VehiclePlate LIKE @VehiclePlate

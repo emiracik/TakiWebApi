@@ -1,0 +1,246 @@
+================================================================
+VELOX / TakiWebApi — SÜRÜCÜ DURUM SORGULARI ve API KARŞILIKLARI
+================================================================
+DB: VeloxTaxiDb (SQL Server, 10.200.0.5)
+Not: Bütün zaman damgaları UTC saklanır -> karşılaştırmalarda GETUTCDATE() kullan (GETDATE() değil).
+"Bayat konum" eşiği = 30 dakika  ->  LocationTime <= DATEADD(MINUTE, -30, GETUTCDATE())
+
+
+ILGILI TABLOLAR
+----------------------------------------------------------------
+DriverLocations
+  DriverID, Latitude, Longitude, IsAvailable(BIT), IsOnline(BIT),
+  LocationTime(DATETIME/UTC), CurrentAddress, Speed, Heading,
+  CreatedDate, UpdatedDate
+  * Sürücü başına TEK satır (MERGE upsert, ON DriverID).
+  * Konum: uygulama 8 sn (ön plan) + 10 sn (arka plan servisi)
+      -> PUT /api/Matching/driver/{driverId}/location
+  * Müsaitlik anahtarı:
+      -> PUT /api/Matching/driver/{driverId}/availability
+  * Kabul anında backend IsAvailable = 0 yapar. Yolculuk bitince
+    uygulama tekrar 1 yapar.
+
+Drivers
+  DriverID(PK), FullName, PhoneNumber, VehiclePlate, VehicleModel,
+  VehicleColor, IsDeleted(BIT), ...
+
+Trips
+  TripID(PK), DriverID, PassengerID,
+  Status(NVARCHAR): 'inProgress' | 'awaitingConfirmation' | 'completed' | 'cancelled'
+  IsDeleted(BIT), StartTime, EndTime, Cost, PaymentMethod
+
+MatchingRequests
+  MatchingRequestID(PK), DriverID,
+  Status(INT): 0=Pending 1=Accepted 2=Rejected 3=Cancelled 4=Expired
+  IsDeleted(BIT), RequestTime, AcceptedTime
+
+
+================================================================
+0) HEPSİNİ TEK SORGUDA KATEGORİLE  (tavsiye edilen genel bakış)
+================================================================
+API karşılığı: tam eşdeğeri YOK. En yakın:
+   GET /api/Matching/all-driver-locations   (yalnızca Admin/SuperAdmin, online + son 30 dk)
+   GET /api/Drivers                         (ham sürücü listesi)
+
+SELECT
+    d.DriverID,
+    d.FullName,
+    d.VehiclePlate,
+    dl.IsOnline,
+    dl.IsAvailable,
+    dl.LocationTime,
+    DATEDIFF(MINUTE, dl.LocationTime, GETUTCDATE()) AS KonumYasiDk,
+    CASE
+        WHEN d.IsDeleted = 1                                              THEN 'Silinmis'
+        WHEN dl.DriverID IS NULL                                          THEN 'Konum yok (hic bildirmemis)'
+        WHEN t.TripID IS NOT NULL                                         THEN 'Aktif yolculukta'
+        WHEN dl.IsOnline = 0                                              THEN 'Cevrimdisi'
+        WHEN dl.LocationTime <= DATEADD(MINUTE, -30, GETUTCDATE())        THEN 'Konumu bayat'
+        WHEN dl.IsAvailable = 1                                           THEN 'Musait'
+        ELSE 'Cevrimici / mesgul'
+    END AS Durum
+FROM Drivers d
+LEFT JOIN DriverLocations dl ON dl.DriverID = d.DriverID
+OUTER APPLY (
+    SELECT TOP 1 tr.TripID
+    FROM Trips tr
+    WHERE tr.DriverID = d.DriverID
+      AND tr.IsDeleted = 0
+      AND tr.Status IN ('inProgress', 'awaitingConfirmation')
+    ORDER BY tr.StartTime DESC
+) t
+ORDER BY Durum, d.DriverID;
+
+
+================================================================
+1) TÜM ÇEVRİMİÇİ SÜRÜCÜLER
+================================================================
+API: GET /api/Matching/all-driver-locations
+     (MatchingRepository.GetAllDriverLocationsAsync — [Authorize(Roles="Admin,SuperAdmin")])
+     Uç, "IsOnline = 1 VE son 30 dk" şartını BİRLİKTE uygular.
+
+SELECT dl.*
+FROM DriverLocations dl
+INNER JOIN Drivers d ON d.DriverID = dl.DriverID AND d.IsDeleted = 0
+WHERE dl.IsOnline = 1
+  AND dl.LocationTime > DATEADD(MINUTE, -30, GETUTCDATE())
+ORDER BY dl.LocationTime DESC;
+
+-- Sadece IsOnline = 1 (bayatlar dahil, ham hali):
+SELECT dl.*
+FROM DriverLocations dl
+INNER JOIN Drivers d ON d.DriverID = dl.DriverID AND d.IsDeleted = 0
+WHERE dl.IsOnline = 1
+ORDER BY dl.LocationTime DESC;
+
+
+================================================================
+2) MÜSAİT SÜRÜCÜLER
+================================================================
+API:
+  GET  /api/Matching/nearby-drivers?latitude=&longitude=&radius=&maxResults=
+       (MatchingRepository.FindNearbyDriversAsync — mesafe + puan filtresi de uygular)
+  POST /api/Matching/find-nearby-drivers            (aynısı, gövdeden parametre)
+  POST /api/Matching/find-best-match                (en yakın müsaiti seçip Pending talep açar)
+  GET  /api/Matching/statistics/available-drivers   (yalnızca SAYI)
+
+SELECT
+    d.DriverID, d.FullName, d.PhoneNumber,
+    d.VehiclePlate, d.VehicleModel, d.VehicleColor,
+    dl.Latitude, dl.Longitude, dl.LocationTime, dl.IsAvailable
+FROM Drivers d
+INNER JOIN DriverLocations dl ON d.DriverID = dl.DriverID
+WHERE d.IsDeleted = 0
+  AND dl.IsAvailable = 1
+  AND dl.IsOnline = 1
+  AND dl.LocationTime > DATEADD(MINUTE, -30, GETUTCDATE())
+  -- güvenlik: aktif yolculukta olanları da hariç tut
+  AND NOT EXISTS (
+        SELECT 1 FROM Trips tr
+        WHERE tr.DriverID = d.DriverID
+          AND tr.IsDeleted = 0
+          AND tr.Status IN ('inProgress', 'awaitingConfirmation')
+      )
+ORDER BY dl.LocationTime DESC;
+
+-- API'nin ek olarak C# tarafında yaptıkları:
+--   * her satır için pickup noktasına Haversine mesafesi hesaplar
+--   * mesafe <= radius (varsayilan MaxDistance ?? 10 km) filtreler
+--   * mesafeye göre artan sıralar, ilk maxResults kaydı alır
+--   * HAVING (AVG(DriverRatings.Rating) >= @MinRating)  (puan alt sınırı verildiyse)
+--   * find-best-match: sonuçtaki .First() = en yakın sürücü
+
+
+================================================================
+3) AKTİF YOLCULUKTAKİ SÜRÜCÜLER
+================================================================
+API:
+  GET /api/Trips/driver/{driverId}/active
+      (TripRepository.GetActiveTripByDriverIdAsync — 'inProgress' VE 'awaitingConfirmation')
+  GET /api/Trips/active
+      (DİKKAT: bu uç şu an yalnızca IsDeleted = 0 filtreliyor -> gerçek "aktif" değil, tümünü döner)
+
+-- Trips üzerinden (asıl doğru kaynak):
+SELECT
+    tr.DriverID, d.FullName, d.VehiclePlate,
+    tr.TripID, tr.PassengerID, tr.Status,
+    tr.StartTime, tr.EndTime, tr.Cost, tr.PaymentMethod
+FROM Trips tr
+INNER JOIN Drivers d ON d.DriverID = tr.DriverID
+WHERE tr.IsDeleted = 0
+  AND tr.Status IN ('inProgress', 'awaitingConfirmation')
+ORDER BY tr.StartTime DESC;
+
+-- Yalnızca "sürücü bitirdi, yolcu onayı bekleniyor":
+SELECT tr.DriverID, tr.TripID, tr.PassengerID, tr.Cost, tr.EndTime
+FROM Trips tr
+WHERE tr.IsDeleted = 0 AND tr.Status = 'awaitingConfirmation';
+
+-- Eski/alternatif ölçüt: MatchingRequests üzerinden "kabul etmiş" sürücüler
+SELECT mr.DriverID, mr.MatchingRequestID, mr.Status, mr.AcceptedTime
+FROM MatchingRequests mr
+WHERE mr.IsDeleted = 0 AND mr.Status = 1;   -- 1 = Accepted
+
+
+================================================================
+4) KONUMU ESKİ / BAYAT SÜRÜCÜLER
+   (online sanıyorlar ama >30 dk'dır konum bildirmemişler -> eşleştirme havuzundan otomatik düşerler)
+================================================================
+API: özel uç YOK. (Fark yalnızca 1. ve 2. sorgulardaki 30 dk şartıyla ortaya çıkar.)
+
+SELECT
+    d.DriverID, d.FullName, d.VehiclePlate,
+    dl.IsOnline, dl.IsAvailable, dl.LocationTime,
+    DATEDIFF(MINUTE, dl.LocationTime, GETUTCDATE()) AS KonumYasiDk
+FROM DriverLocations dl
+INNER JOIN Drivers d ON d.DriverID = dl.DriverID AND d.IsDeleted = 0
+WHERE dl.IsOnline = 1
+  AND dl.LocationTime <= DATEADD(MINUTE, -30, GETUTCDATE())
+ORDER BY dl.LocationTime ASC;
+
+
+================================================================
+5) DİĞER SÜRÜCÜLER
+   (çevrimdışı  /  hiç konum bildirmemiş  /  silinmiş — yani 1-4 kategorilerinin hiçbirinde olmayanlar)
+================================================================
+API:
+  GET /api/Drivers            (hepsi — [Authorize])
+  GET /api/Drivers/active     (IsDeleted = 0 olanlar)
+  GET /api/Drivers/{id}
+
+SELECT
+    d.DriverID, d.FullName, d.VehiclePlate, d.IsDeleted,
+    dl.IsOnline, dl.LocationTime,
+    CASE
+        WHEN d.IsDeleted = 1        THEN 'Silinmis'
+        WHEN dl.DriverID IS NULL    THEN 'Hic konum bildirmemis'
+        WHEN dl.IsOnline = 0        THEN 'Cevrimdisi'
+        ELSE 'Diger'
+    END AS Neden
+FROM Drivers d
+LEFT JOIN DriverLocations dl ON dl.DriverID = d.DriverID
+WHERE d.IsDeleted = 1
+   OR dl.DriverID IS NULL
+   OR dl.IsOnline = 0
+ORDER BY d.DriverID;
+
+
+================================================================
+SAYILAR (dashboard / istatistik)
+================================================================
+-- Müsait sürücü sayısı
+-- API: GET /api/Matching/statistics/available-drivers
+SELECT COUNT(DISTINCT dl.DriverID)
+FROM DriverLocations dl
+INNER JOIN Drivers d ON dl.DriverID = d.DriverID
+WHERE dl.IsAvailable = 1
+  AND dl.IsOnline = 1
+  AND d.IsDeleted = 0
+  AND dl.LocationTime > DATEADD(MINUTE, -30, GETUTCDATE());
+
+-- Aktif eşleştirme talebi sayısı (Pending + Accepted)
+-- API: GET /api/Matching/statistics/active-requests
+SELECT COUNT(1)
+FROM MatchingRequests
+WHERE Status IN (0, 1) AND IsDeleted = 0;   -- 0=Pending 1=Accepted
+
+-- Aktif yolculuk sayısı (Trips bazlı, doğru ölçüt)
+SELECT COUNT(1)
+FROM Trips
+WHERE IsDeleted = 0 AND Status IN ('inProgress', 'awaitingConfirmation');
+
+
+================================================================
+NOTLAR / BİLİNEN DAVRANIŞLAR
+================================================================
+- LocationTime UTC'dir. GETUTCDATE() kullan; GETDATE() (yerel saat) yanlış sonuç verir.
+- SetDriverAvailabilityAsync yalnızca UPDATE yapar. Sürücü hiç konum
+  göndermediyse DriverLocations satırı yoktur ve "Müsait Ol" hiçbir yere yazılmaz
+  -> o sürücü 2. sorguda görünmez.
+- Kabul anında backend IsAvailable = 0 yapar. Yolculuk düzgün bitmezse
+  (çökme, arka plan servisi yarışı, curl testi) sürücü tekrar "Müsait Ol"
+  diyene kadar havuza dönmez.
+- Sürücü uygulaması aynı anda hem ön plan timer'ı hem arka plan servisi ile
+  konum/müsaitlik yazdığı için IsAvailable değeri kısa süreli 0/1 titreyebilir.
+- 'awaitingConfirmation' = sürücü "Yolculuğu Bitir" dedi, yolcu onayı bekleniyor.
+  Bu durumda sürücü hâlâ "aktif yolculukta" sayılır (havuza dönmemiştir).

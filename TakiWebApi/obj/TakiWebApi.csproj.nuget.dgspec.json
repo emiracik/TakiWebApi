@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj": {}
+    "D:\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj": {
+    "D:\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
+        "projectUniqueName": "D:\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
         "projectName": "TakiWebApi",
-        "projectPath": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
-        "packagesPath": "C:\\Users\\erenh\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\erenh\\Documents\\GitHub\\TakiWebApi\\TakiWebApi\\obj\\",
+        "projectPath": "D:\\GitHub\\TakiWebApi\\TakiWebApi\\TakiWebApi.csproj",
+        "packagesPath": "D:\\NuGetCache\\packages",
+        "outputPath": "D:\\GitHub\\TakiWebApi\\TakiWebApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\erenh\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\emira\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -53,6 +52,10 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
+            "Google.Apis.Auth": {
+              "target": "Package",
+              "version": "[1.76.0, )"
+            },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[9.0.7, )"

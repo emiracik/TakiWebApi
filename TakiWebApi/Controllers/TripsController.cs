@@ -13,11 +13,25 @@ public class TripsController : ControllerBase
 {
     private readonly ITripRepository _tripRepository;
     private readonly IJwtService _jwtService;
+    private readonly IWalletRepository _walletRepository;
+    private readonly IDriverEarningRepository _driverEarningRepository;
 
-    public TripsController(ITripRepository tripRepository, IJwtService jwtService)
+    // --- Gelir modeli anahtarı ---
+    // true  = ücretin TAMAMI bize kalır (sürücü hakedişi 0 yazılır — sabit
+    //         maaşlı / şirket filosu modeli).
+    // false = biz aracılık ücretimizi (komisyon) alırız, kalanı sürücüye
+    //         hakediş olarak yazarız (klasik Uber/Bolt modeli).
+    // Değiştirip yeniden deploy etmek yeterli — DB şeması gerekmiyor.
+    public const bool PlatformTakesFullFare = false;
+    public const decimal CommissionRate = 0.20m; // %20 aracılık ücreti
+
+    public TripsController(ITripRepository tripRepository, IJwtService jwtService,
+        IWalletRepository walletRepository, IDriverEarningRepository driverEarningRepository)
     {
         _tripRepository = tripRepository;
         _jwtService = jwtService;
+        _walletRepository = walletRepository;
+        _driverEarningRepository = driverEarningRepository;
     }
 
     [HttpGet]
@@ -134,5 +148,156 @@ public class TripsController : ControllerBase
     {
         var totalCost = await _tripRepository.GetTotalTripCostByPassengerIdAsync(passengerId);
         return Ok(totalCost);
+    }
+
+    /// <summary>
+    /// Sürücünün şu an devam etmekte olan (inProgress) yolculuğu — uygulama
+    /// kapatılıp açıldığında aktif yolculuğu geri yüklemek için kullanılır.
+    /// </summary>
+    [HttpGet("driver/{driverId}/active")]
+    public async Task<ActionResult<Trip>> GetActiveTripForDriver(int driverId)
+    {
+        var trip = await _tripRepository.GetActiveTripByDriverIdAsync(driverId);
+        if (trip == null)
+        {
+            return NotFound();
+        }
+        return Ok(trip);
+    }
+
+    /// <summary>
+    /// Yolcunun seçtiği ödeme yöntemini yolculuğa yazar ("wallet" | "card").
+    /// Yolculuk tamamlandığında ücret buna göre tahsil edilir.
+    /// </summary>
+    [HttpPut("{tripId}/payment-method")]
+    public async Task<IActionResult> SetPaymentMethod(int tripId, [FromBody] string paymentMethod)
+    {
+        var method = (paymentMethod ?? "").Trim().ToLowerInvariant();
+        if (method != "wallet" && method != "card")
+        {
+            return BadRequest("paymentMethod 'wallet' veya 'card' olmalı.");
+        }
+        var ok = await _tripRepository.SetPaymentMethodAsync(tripId, method);
+        return ok ? Ok(new { message = "Ödeme yöntemi kaydedildi.", paymentMethod = method })
+                  : NotFound("Yolculuk bulunamadı.");
+    }
+
+    /// <summary>
+    /// Sürücü "Yolculuğu Bitir" dediğinde çağrılır. Yolculuk
+    /// 'awaitingConfirmation' durumuna geçer (EndTime + nihai ücret yazılır)
+    /// ama ÜCRET TAHSİL EDİLMEZ — yolcunun onayı beklenir.
+    /// </summary>
+    [HttpPost("{tripId}/driver-finish")]
+    public async Task<IActionResult> DriverFinishTrip(int tripId, [FromBody] decimal? finalCost)
+    {
+        var ok = await _tripRepository.DriverFinishTripAsync(tripId, finalCost);
+        if (!ok)
+        {
+            return NotFound("Devam eden yolculuk bulunamadı.");
+        }
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        return Ok(new
+        {
+            message = "Yolcu onayı bekleniyor.",
+            awaitingConfirmation = true,
+            fare = trip?.Cost ?? finalCost ?? 0m,
+            paymentMethod = (trip?.PaymentMethod ?? "card").ToLowerInvariant()
+        });
+    }
+
+    /// <summary>
+    /// Yolcu, sürücünün bitirdiği yolculuğu onaylar. Yolculuk 'completed'
+    /// olur ve ödeme yöntemi "wallet" ise ücret cüzdandan tahsil edilir.
+    /// </summary>
+    [HttpPost("{tripId}/confirm")]
+    public async Task<IActionResult> ConfirmTrip(int tripId)
+    {
+        var ok = await _tripRepository.CompleteTripAsync(tripId, null);
+        if (!ok)
+        {
+            return NotFound("Yolculuk bulunamadı.");
+        }
+        var result = await SettleTripAsync(tripId, null);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Devam eden bir yolculuğu doğrudan tamamlandı olarak işaretler ve
+    /// ücreti tahsil eder (yolcu onayı olmadan — yedek/eski akış).
+    /// </summary>
+    [HttpPost("{tripId}/complete")]
+    public async Task<IActionResult> CompleteTrip(int tripId, [FromBody] decimal? finalCost)
+    {
+        var ok = await _tripRepository.CompleteTripAsync(tripId, finalCost);
+        if (!ok)
+        {
+            return NotFound("Yolculuk bulunamadı.");
+        }
+        var result = await SettleTripAsync(tripId, finalCost);
+        return Ok(result);
+    }
+
+    // Ücret tahsilatı — hem confirm hem complete tarafından kullanılır.
+    private async Task<object> SettleTripAsync(int tripId, decimal? finalCost)
+    {
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        var fare = trip?.Cost ?? finalCost ?? 0m;
+        var method = (trip?.PaymentMethod ?? "card").ToLowerInvariant();
+        bool walletCharged = false;
+        bool walletShort = false;
+
+        if (method == "wallet" && trip?.PassengerID is int passengerId && fare > 0)
+        {
+            var wallet = await _walletRepository.GetWalletByUserIdAsync(passengerId)
+                         ?? await _walletRepository.CreateWalletAsync(passengerId);
+            if (wallet.Balance >= fare)
+            {
+                await _walletRepository.AddTransactionAsync(new WalletTransaction
+                {
+                    WalletID = wallet.WalletID,
+                    UserID = passengerId,
+                    TransactionType = "TripPayment",
+                    Amount = -fare,
+                    Description = $"Yolculuk ödemesi (#{tripId})",
+                    TransactionDate = DateTime.Now
+                });
+                await _walletRepository.UpdateWalletBalanceAsync(
+                    wallet.WalletID, wallet.Balance - fare, wallet.TotalIn, wallet.TotalOut + fare);
+                walletCharged = true;
+            }
+            else
+            {
+                walletShort = true;
+            }
+        }
+
+        // Sürücü hakedişi — gelir modeline göre (PlatformTakesFullFare).
+        decimal driverEarning = 0m;
+        decimal platformCommission = fare;
+        if (trip?.DriverID is int driverId && fare > 0
+            && !await _driverEarningRepository.ExistsForTripAsync(tripId))
+        {
+            driverEarning = PlatformTakesFullFare ? 0m : Math.Round(fare * (1 - CommissionRate), 2);
+            platformCommission = fare - driverEarning;
+            await _driverEarningRepository.CreateAsync(new DriverEarning
+            {
+                DriverID = driverId,
+                TripID = tripId,
+                Amount = driverEarning,
+                EarnedAt = DateTime.UtcNow,
+            });
+        }
+
+        return new
+        {
+            message = "Yolculuk tamamlandı.",
+            fare,
+            paymentMethod = method,
+            walletCharged,
+            walletShort,
+            platformTakesFullFare = PlatformTakesFullFare,
+            driverEarning,
+            platformCommission
+        };
     }
 }

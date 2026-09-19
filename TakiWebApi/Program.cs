@@ -74,11 +74,25 @@ builder.Services.AddScoped<ITripRatingRepository, TripRatingRepository>();
 // Register Wallet repository
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 
+// Register Driver Earnings repository — sürücü hakedişi (komisyon modeli
+// aktifken tam ücretten düşük olabilir) gerçek kayıtları burada tutulur.
+builder.Services.AddScoped<IDriverEarningRepository, DriverEarningRepository>();
+
 // Register RefreshToken repository
 builder.Services.AddSingleton<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Register Matching repository - NEW MATCHING SYSTEM
 builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
+
+// Bunlar controller'ları vardı ama DI'a hiç kayıtlı değillerdi — her
+// endpoint'leri (BankInfo, DriverDocuments, Feedbacks, Invoices, Messages,
+// SharedRides) constructor injection çözülemediği için 500 dönüyordu.
+builder.Services.AddScoped<IBankInfoRepository, BankInfoRepository>();
+builder.Services.AddScoped<IDriverDocumentRepository, DriverDocumentRepository>();
+builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<ISharedRideRepository, SharedRideRepository>();
 
 // Register JWT service
 builder.Services.AddScoped<IJwtService, JwtService>();

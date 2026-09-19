@@ -235,7 +235,12 @@ public class MatchingRepository : IMatchingRepository
             request.DropoffLatitude, request.DropoffLongitude);
 
         var estimatedDuration = await EstimateArrivalTimeAsync(tripDistance);
-        var estimatedCost = await CalculateEstimatedCostAsync(tripDistance, estimatedDuration);
+        var calculatedCost = await CalculateEstimatedCostAsync(tripDistance, estimatedDuration, request.VehicleType);
+
+        // Teklif sistemi: yolcu kendi ücretini önerdiyse (ör. "400 TL'ye götürür
+        // müsün?"), hesaplanan tarife yerine bu tutar geçerli olur.
+        var isCustomOffer = request.OfferedFare.HasValue && request.OfferedFare.Value > 0;
+        var estimatedCost = isCustomOffer ? request.OfferedFare!.Value : calculatedCost;
 
         // 2. Find nearby available drivers
         var nearbyDrivers = await FindNearbyDriversAsync(
@@ -244,11 +249,11 @@ public class MatchingRepository : IMatchingRepository
 
         if (!nearbyDrivers.Any())
         {
-            return new MatchingResponse
-            {
-                Status = MatchingStatus.Rejected,
-                Message = "Yakında müsait sürücü bulunamadı."
-            };
+            // null dönmeli: controller bunu 404'e çeviriyor. 200 + sahte bir
+            // MatchingResponse dönmek, client'ın "matchingRequestID != null" kontrolünü
+            // (0 da null değildir) yanıltıp sürücü bulunmamasına rağmen "eşleşme bulundu"
+            // göstermesine sebep oluyordu.
+            return null;
         }
 
         // 3. Select best driver (closest with good rating)
@@ -270,7 +275,7 @@ public class MatchingRepository : IMatchingRepository
             MaxWaitTime = request.MaxWaitTime,
             MinRating = request.MinRating,
             MaxDistance = request.MaxDistance,
-            Notes = request.Notes,
+            Notes = BuildNotes(request.Notes, request.VehicleType, isCustomOffer, calculatedCost),
             Status = MatchingStatus.Pending,
             ExpiryTime = DateTime.UtcNow.AddMinutes(request.MaxWaitTime ?? 15)
         };
@@ -289,8 +294,18 @@ public class MatchingRepository : IMatchingRepository
             EstimatedCost = estimatedCost,
             EstimatedArrival = bestDriver.EstimatedArrival,
             RequestTime = createdRequest.RequestTime,
-            Message = "En uygun sürücü bulundu ve talep oluşturuldu."
+            Message = isCustomOffer
+                ? $"En uygun sürücü bulundu. Teklifiniz (₺{estimatedCost:0.##}) ile talep oluşturuldu."
+                : "En uygun sürücü bulundu ve talep oluşturuldu."
         };
+    }
+
+    // request.Notes + araç sınıfı + teklif bilgisini tek bir metne paketler
+    // (şema değişikliği yapmadan iz tutmak için). Format: "vehicleType=comfort;offeredFare=true;calculatedFare=230.00 | <kullanıcı notu>"
+    private static string? BuildNotes(string? userNotes, string? vehicleType, bool isCustomOffer, decimal calculatedCost)
+    {
+        var meta = $"vehicleType={(string.IsNullOrWhiteSpace(vehicleType) ? "economy" : vehicleType)};offeredFare={isCustomOffer.ToString().ToLowerInvariant()};calculatedFare={calculatedCost.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}";
+        return string.IsNullOrWhiteSpace(userNotes) ? meta : $"{meta} | {userNotes}";
     }
 
     public async Task<MatchingResponse> AcceptMatchingRequestAsync(int driverId, int requestId)
@@ -339,15 +354,36 @@ public class MatchingRepository : IMatchingRepository
 
     #region Utility Operations
 
-    public async Task<decimal> CalculateEstimatedCostAsync(double distanceKm, double durationMinutes)
-    {
-        // Basit fiyat hesaplama: Base ücret + km başına ücret + dakika başına ücret
-        var baseFare = 15.0m; // TL
-        var perKmRate = 3.5m; // TL/km
-        var perMinuteRate = 0.5m; // TL/dakika
+    // Ücret tarifesi — Temmuz 2026 UKOME kararı, İstanbul taksi segmentleri.
+    // Tamamen KM bazlı: taksimetre açılışı + (km * km ücreti), indi-bindi
+    // (minimum) ücretin altına inmez. Tek yerden ayarlanır.
+    // "economy" (Sarı Taksi) varsayılan/eski davranışla geriye dönük uyumlu.
+    public const decimal OpeningFare = 71.94m;   // açılış — Sarı Taksi (TL)
+    public const decimal PerKmRate = 47.92m;     // km başına — Sarı Taksi (TL)
+    public const decimal MinimumFare = 230.00m;  // minimum — Sarı Taksi (TL)
 
-        var totalCost = baseFare + ((decimal)distanceKm * perKmRate) + ((decimal)durationMinutes * perMinuteRate);
-        
+    /// <summary>
+    /// Araç sınıfına göre (açılış, km ücreti, minimum ücret) tarifesini döner.
+    /// Bilinmeyen/boş değer için Sarı Taksi (economy) tarifesi kullanılır.
+    /// </summary>
+    public static (decimal Opening, decimal PerKm, decimal Minimum) GetFareRates(string? vehicleType)
+    {
+        return (vehicleType ?? "").Trim().ToLowerInvariant() switch
+        {
+            "comfort" or "konfor" or "turkuaz" => (82.73m, 55.10m, 264.50m),
+            "premium" or "vip" or "luxury" or "lux" or "siyah" => (122.30m, 81.46m, 391.00m),
+            _ => (OpeningFare, PerKmRate, MinimumFare), // "economy" / "normal" / bilinmeyen
+        };
+    }
+
+    public async Task<decimal> CalculateEstimatedCostAsync(double distanceKm, double durationMinutes, string? vehicleType = null)
+    {
+        // KM bazlı hesap: açılış + (km * km ücreti); minimum ücretin altına inmez.
+        var (opening, perKm, minimum) = GetFareRates(vehicleType);
+        var totalCost = opening + ((decimal)distanceKm * perKm);
+
+        if (totalCost < minimum) totalCost = minimum;
+
         return await Task.FromResult(Math.Round(totalCost, 2));
     }
 
@@ -618,6 +654,103 @@ public class MatchingRepository : IMatchingRepository
             MatchingRequestID = requestId,
             Status = rowsAffected > 0 ? MatchingStatus.Cancelled : MatchingStatus.Pending,
             Message = rowsAffected > 0 ? "Talep iptal edildi." : "Talep iptal edilemedi."
+        };
+    }
+
+    /// <summary>
+    /// Sürücü, bekleyen (Pending) bir talebi doğrudan kabul etmek yerine
+    /// kendi fiyatını önerir. Talebi kendine "ayırır" (DriverID atanır) ve
+    /// CounterOffered durumuna geçirir — böylece başka sürücüler aynı anda
+    /// aynı talebe teklif veremez.
+    /// </summary>
+    public async Task<MatchingResponse> DriverCounterOfferAsync(int driverId, int requestId, decimal amount)
+    {
+        const string sql = @"
+            UPDATE MatchingRequests
+            SET DriverID = @DriverId, Status = @CounterStatus, EstimatedCost = @Amount, UpdatedDate = @UpdatedDate
+            WHERE MatchingRequestID = @RequestId AND Status = @PendingStatus";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@DriverId", driverId);
+        command.Parameters.AddWithValue("@CounterStatus", (int)MatchingStatus.CounterOffered);
+        command.Parameters.AddWithValue("@Amount", amount);
+        command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@RequestId", requestId);
+        command.Parameters.AddWithValue("@PendingStatus", (int)MatchingStatus.Pending);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+
+        if (rowsAffected > 0)
+        {
+            var request = await GetMatchingRequestByIdAsync(requestId);
+            return new MatchingResponse
+            {
+                MatchingRequestID = requestId,
+                Status = MatchingStatus.CounterOffered,
+                DriverID = driverId,
+                EstimatedCost = amount,
+                RequestTime = request?.RequestTime ?? DateTime.UtcNow,
+                Message = "Teklifiniz yolcuya iletildi."
+            };
+        }
+
+        return new MatchingResponse
+        {
+            MatchingRequestID = requestId,
+            Status = MatchingStatus.Rejected,
+            Message = "Bu talep artık uygun değil (başka sürücü almış veya süresi dolmuş olabilir)."
+        };
+    }
+
+    /// <summary>
+    /// Yolcu, sürücünün karşı teklifine yanıt verir. Kabul edilirse talep
+    /// Accepted olur (Trip oluşturma işlemi controller'da yapılır). Reddedilirse
+    /// — bu sistemde talep tek bir sürücüyü hedeflediği için (yayın/bidding
+    /// yok) — görüşme biter ve talep iptal olur.
+    /// </summary>
+    public async Task<MatchingResponse> RespondToCounterOfferAsync(int requestId, bool accept)
+    {
+        var newStatus = accept ? MatchingStatus.Accepted : MatchingStatus.Cancelled;
+        var sql = accept
+            ? @"UPDATE MatchingRequests
+                SET Status = @NewStatus, AcceptedTime = @Now, UpdatedDate = @Now
+                WHERE MatchingRequestID = @RequestId AND Status = @CounterStatus"
+            : @"UPDATE MatchingRequests
+                SET Status = @NewStatus, UpdatedDate = @Now
+                WHERE MatchingRequestID = @RequestId AND Status = @CounterStatus";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@NewStatus", (int)newStatus);
+        command.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@RequestId", requestId);
+        command.Parameters.AddWithValue("@CounterStatus", (int)MatchingStatus.CounterOffered);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+
+        if (rowsAffected == 0)
+        {
+            return new MatchingResponse
+            {
+                MatchingRequestID = requestId,
+                Status = MatchingStatus.Rejected,
+                Message = "Bu teklif artık geçerli değil."
+            };
+        }
+
+        var request = await GetMatchingRequestByIdAsync(requestId);
+        return new MatchingResponse
+        {
+            MatchingRequestID = requestId,
+            Status = newStatus,
+            DriverID = request?.DriverID,
+            EstimatedCost = request?.EstimatedCost,
+            RequestTime = request?.RequestTime ?? DateTime.UtcNow,
+            AcceptedTime = accept ? DateTime.UtcNow : null,
+            Message = accept ? "Teklif kabul edildi." : "Teklif reddedildi."
         };
     }
 
