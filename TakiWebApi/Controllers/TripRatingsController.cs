@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class TripRatingsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<TripRating>>> GetAll()
     {
         var ratings = await _tripRatingRepository.GetAllAsync();
@@ -50,6 +52,7 @@ public class TripRatingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Add([FromBody] TripRating rating)
     {
+        if (!User.IsPassenger(rating.RatedByUserID)) return Forbid();
         rating.CreatedDate = DateTime.UtcNow;
         await _tripRatingRepository.AddAsync(rating);
         return Ok();

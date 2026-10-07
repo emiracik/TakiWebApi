@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace TakiWebApi.Models;
 
@@ -20,6 +21,8 @@ public class User
     [StringLength(200)]
     public string? Email { get; set; }
 
+    // Hash API yanıtlarında asla dönmez, istek gövdesinden de set edilemez.
+    [JsonIgnore]
     [StringLength(255)]
     public string? PasswordHash { get; set; }
 

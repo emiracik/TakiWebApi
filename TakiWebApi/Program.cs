@@ -5,12 +5,26 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+// Yönetici aracı: sürücüye/kullanıcıya panelden şifre atamak için BCrypt
+// hash'i üretir. Kullanım: dotnet TakiWebApi.dll hash-password <şifre>
+if (args.Length == 2 && args[0] == "hash-password")
+{
+    Console.WriteLine(new PasswordService().HashPassword(args[1]));
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Varsayılan: her uç token ister. Açık uçlar [AllowAnonymous] ile işaretlenir.
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
+    // URL'deki userId/passengerId/driverId token sahibine ait olmalı.
+    options.Filters.Add<TakiWebApi.Security.ResourceOwnerFilter>();
+});
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -49,10 +63,9 @@ try
 }
 catch (Exception ex)
 {
+    // Uygulama yine de ayağa kalkar; durum /health/database ile izlenir.
     Console.WriteLine("❌ Database connection failed!");
-    Console.WriteLine($"🔗 Connection String: {connectionString}");
     Console.WriteLine($"💥 Error: {ex.Message}");
-    throw;
 }
 
 // Register repositories
@@ -102,6 +115,24 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 
 var app = builder.Build();
 
+// Yakalanmayan hatalar istemciye ayrıntı (SQL mesajı, tablo adı vb.)
+// sızdırmadan loglanır; istemci sadece genel mesaj ve traceId görür.
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("UnhandledException");
+    if (feature != null)
+        logger.LogError(feature.Error, "Unhandled exception on {Path}", context.Request.Path);
+
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsJsonAsync(new
+    {
+        Success = false,
+        Message = "Beklenmeyen bir hata oluştu.",
+        TraceId = context.TraceIdentifier
+    });
+}));
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -115,90 +146,21 @@ app.UseAuthorization();
 // Map controllers
 app.MapControllers();
 
-// Database health check endpoint
+// Sağlık kontrolü — yalnızca durum döner; sunucu/DB adı veya sayılar
+// dışarıya verilmez.
 app.MapGet("/health/database", async (IConfiguration config) =>
 {
     try
     {
-        var connectionString = config.GetConnectionString("SqlServerConnection");
-        using var connection = new SqlConnection(connectionString);
+        using var connection = new SqlConnection(config.GetConnectionString("SqlServerConnection"));
         await connection.OpenAsync();
-        
-        // Test if Users table exists
-        const string sql = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Users'";
-        using var command = new SqlCommand(sql, connection);
-        var tableExists = Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
-        
-        if (tableExists)
-        {
-            // Get user count
-            const string countSql = "SELECT COUNT(*) FROM Users";
-            using var countCommand = new SqlCommand(countSql, connection);
-            var userCount = Convert.ToInt32(await countCommand.ExecuteScalarAsync());
-            
-            return Results.Ok(new { 
-                Status = "Healthy", 
-                Database = connection.Database,
-                Server = connection.DataSource,
-                UsersTableExists = true,
-                UserCount = userCount,
-                Timestamp = DateTime.UtcNow
-            });
-        }
-        else
-        {
-            return Results.Ok(new { 
-                Status = "Connected but Users table missing", 
-                Database = connection.Database,
-                Server = connection.DataSource,
-                UsersTableExists = false,
-                Timestamp = DateTime.UtcNow
-            });
-        }
+        return Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow });
     }
-    catch (Exception ex)
+    catch
     {
-        return Results.Problem($"Database connection failed: {ex.Message}");
+        return Results.Json(new { Status = "Unhealthy", Timestamp = DateTime.UtcNow }, statusCode: 503);
     }
 })
 .WithName("DatabaseHealthCheck");
 
-// Connection strings info endpoint
-app.MapGet("/health/connections", (IConfiguration config) =>
-{
-    var connections = new
-    {
-        DefaultConnection = config.GetConnectionString("DefaultConnection"),
-        SqlServerConnection = config.GetConnectionString("SqlServerConnection"),
-        CurrentlyUsing = "SqlServerConnection"
-    };
-    return Results.Ok(connections);
-})
-.WithName("ConnectionStringsInfo");
-
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

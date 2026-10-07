@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class UserNotificationSettingsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserNotificationSetting>>> GetAllUserNotificationSettings()
     {
         var settings = await _userNotificationSettingRepository.GetAllUserNotificationSettingsAsync();
@@ -32,6 +34,10 @@ public class UserNotificationSettingsController : ControllerBase
         if (setting == null)
         {
             return NotFound();
+        }
+        if (!User.IsPassenger(setting.UserID))
+        {
+            return Forbid();
         }
 
         return Ok(setting);
@@ -51,6 +57,7 @@ public class UserNotificationSettingsController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserNotificationSetting>>> GetUserNotificationSettingsPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -63,6 +70,7 @@ public class UserNotificationSettingsController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalUserNotificationSettingsCount()
     {
         var count = await _userNotificationSettingRepository.GetTotalUserNotificationSettingsCountAsync();
@@ -77,6 +85,11 @@ public class UserNotificationSettingsController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        if (!User.IsPassenger(userNotificationSetting.UserID))
+        {
+            return Forbid();
+        }
+
         try
         {
             var settingId = await _userNotificationSettingRepository.CreateUserNotificationSettingAsync(userNotificationSetting);
@@ -84,9 +97,9 @@ public class UserNotificationSettingsController : ControllerBase
             
             return CreatedAtAction(nameof(GetUserNotificationSetting), new { id = settingId }, createdSetting);
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -106,6 +119,14 @@ public class UserNotificationSettingsController : ControllerBase
         try
         {
             var existingSetting = await _userNotificationSettingRepository.GetUserNotificationSettingByIdAsync(id);
+            if (existingSetting != null && !User.IsPassenger(existingSetting.UserID))
+            {
+                return Forbid();
+            }
+            if (existingSetting != null)
+            {
+                userNotificationSetting.UserID = existingSetting.UserID;
+            }
             if (existingSetting == null)
             {
                 return NotFound();
@@ -120,13 +141,14 @@ public class UserNotificationSettingsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUserNotificationSetting(int id)
     {
         try
@@ -146,9 +168,9 @@ public class UserNotificationSettingsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 }

@@ -1,3 +1,5 @@
+using TakiWebApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
@@ -12,13 +14,16 @@ public class FeedbacksController : ControllerBase
     public FeedbacksController(IFeedbackRepository repo) => _repo = repo;
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Feedback>>> GetAll() => Ok(await _repo.GetAllAsync());
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Feedback>> GetById(int id)
     {
         var feedback = await _repo.GetByIdAsync(id);
-        return feedback == null ? NotFound() : Ok(feedback);
+        if (feedback == null) return NotFound();
+        if (!(User.IsPartyOf(feedback.UserID, feedback.DriverID))) return Forbid();
+        return Ok(feedback);
     }
 
     [HttpGet("user/{userId}")]
@@ -28,16 +33,19 @@ public class FeedbacksController : ControllerBase
     public async Task<ActionResult<IEnumerable<Feedback>>> GetByDriverId(int driverId) => Ok(await _repo.GetByDriverIdAsync(driverId));
 
     [HttpGet("trip/{tripId}")]
-    public async Task<ActionResult<IEnumerable<Feedback>>> GetByTripId(int tripId) => Ok(await _repo.GetByTripIdAsync(tripId));
+    public async Task<ActionResult<IEnumerable<Feedback>>> GetByTripId(int tripId) =>
+        Ok((await _repo.GetByTripIdAsync(tripId)).Where(f => User.IsPartyOf(f.UserID, f.DriverID)));
 
     [HttpPost]
     public async Task<ActionResult<int>> Create([FromBody] Feedback feedback)
     {
+        if (!User.IsPartyOf(feedback.UserID, feedback.DriverID)) return Forbid();
         var id = await _repo.CreateAsync(feedback);
         return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var success = await _repo.DeleteAsync(id);

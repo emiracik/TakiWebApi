@@ -1,0 +1,25 @@
+## Derleme çıktıları
+bin/
+obj/
+**/bin/
+**/obj/
+
+## Visual Studio / kullanıcıya özel
+.vs/
+*.user
+*.suo
+
+## Gizli ayarlar — repoya girmez.
+## Bağlantı dizesi ve JWT anahtarı bu dosyalarda tutulur:
+##   appsettings.Development.json  → yerel geliştirme
+##   appsettings.Production.json   → canlı sunucu (publish ile birlikte gider)
+appsettings.Development.json
+appsettings.Production.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+
+## Canlıya hazır paket (dotnet publish çıktısı)
+publish/
+
+## deploy.ps1 yedekleri
+backups/

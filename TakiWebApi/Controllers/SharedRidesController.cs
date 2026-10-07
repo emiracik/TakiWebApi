@@ -1,3 +1,5 @@
+using TakiWebApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
@@ -6,12 +8,14 @@ namespace TakiWebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class SharedRidesController : ControllerBase
 {
     private readonly ISharedRideRepository _repo;
     public SharedRidesController(ISharedRideRepository repo) => _repo = repo;
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<SharedRide>>> GetAll() => Ok(await _repo.GetAllAsync());
 
     [HttpGet("{id}")]
@@ -32,6 +36,7 @@ public class SharedRidesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, [FromBody] SharedRide ride)
     {
         if (id != ride.SharedRideID) return BadRequest();
@@ -40,6 +45,7 @@ public class SharedRidesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var success = await _repo.DeleteAsync(id);

@@ -317,7 +317,7 @@ public class DriverRepository : IDriverRepository
     {
         const string sql = @"
             UPDATE Drivers 
-            SET FullName = @FullName, PhoneNumber = @PhoneNumber, Email = @Email, PasswordHash = @PasswordHash,
+            SET FullName = @FullName, PhoneNumber = @PhoneNumber, Email = @Email, PasswordHash = COALESCE(@PasswordHash, PasswordHash),
                 VehiclePlate = @VehiclePlate, VehicleModel = @VehicleModel, VehicleColor = @VehicleColor,
                 UpdatedDate = @UpdatedDate, IsDeleted = @IsDeleted
             OUTPUT INSERTED.DriverID, INSERTED.FullName, INSERTED.PhoneNumber, INSERTED.Email, INSERTED.PasswordHash,
@@ -365,7 +365,26 @@ public class DriverRepository : IDriverRepository
 
         await connection.OpenAsync();
         var rowsAffected = await command.ExecuteNonQueryAsync();
-        
+
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> UpdateDriverPasswordAsync(int driverId, string newPasswordHash)
+    {
+        const string sql = @"
+            UPDATE Drivers
+            SET PasswordHash = @PasswordHash, UpdatedDate = @UpdatedDate
+            WHERE DriverID = @DriverID AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+
+        command.Parameters.Add("@DriverID", SqlDbType.Int).Value = driverId;
+        command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = newPasswordHash;
+        command.Parameters.Add("@UpdatedDate", SqlDbType.DateTime).Value = DateTime.UtcNow;
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
         return rowsAffected > 0;
     }
 }

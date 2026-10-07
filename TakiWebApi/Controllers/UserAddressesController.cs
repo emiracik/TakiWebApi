@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAddress>>> GetAllUserAddresses()
     {
         var userAddresses = await _userAddressRepository.GetAllUserAddressesAsync();
@@ -33,6 +35,10 @@ public class UserAddressesController : ControllerBase
         {
             return NotFound();
         }
+        if (!User.IsPassenger(userAddress.UserID))
+        {
+            return Forbid();
+        }
 
         return Ok(userAddress);
     }
@@ -45,6 +51,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAddress>>> GetActiveUserAddresses()
     {
         var userAddresses = await _userAddressRepository.GetActiveUserAddressesAsync();
@@ -52,6 +59,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAddress>>> GetUserAddressesPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -64,6 +72,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalUserAddressesCount()
     {
         var count = await _userAddressRepository.GetTotalUserAddressesCountAsync();
@@ -71,6 +80,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveUserAddressesCount()
     {
         var count = await _userAddressRepository.GetActiveUserAddressesCountAsync();
@@ -78,6 +88,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAddress>>> SearchUserAddressesByTitle([FromQuery] string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -90,6 +101,7 @@ public class UserAddressesController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAddress>>> GetUserAddressesByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -109,6 +121,11 @@ public class UserAddressesController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        if (!User.IsPassenger(userAddress.UserID))
+        {
+            return Forbid();
+        }
+
         try
         {
             var addressId = await _userAddressRepository.CreateUserAddressAsync(userAddress);
@@ -116,9 +133,9 @@ public class UserAddressesController : ControllerBase
             
             return CreatedAtAction(nameof(GetUserAddress), new { id = addressId }, createdUserAddress);
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -142,7 +159,12 @@ public class UserAddressesController : ControllerBase
             {
                 return NotFound();
             }
+            if (!User.IsPassenger(existingUserAddress.UserID))
+            {
+                return Forbid();
+            }
 
+            userAddress.UserID = existingUserAddress.UserID;
             userAddress.UpdatedDate = DateTime.UtcNow;
             var success = await _userAddressRepository.UpdateUserAddressAsync(userAddress);
             
@@ -153,9 +175,9 @@ public class UserAddressesController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -169,6 +191,10 @@ public class UserAddressesController : ControllerBase
             {
                 return NotFound();
             }
+            if (!User.IsPassenger(existingUserAddress.UserID))
+            {
+                return Forbid();
+            }
 
             var success = await _userAddressRepository.DeleteUserAddressAsync(id);
             
@@ -179,9 +205,9 @@ public class UserAddressesController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -211,9 +237,9 @@ public class UserAddressesController : ControllerBase
 
             return Ok(new { message = "Default address updated successfully." });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 }

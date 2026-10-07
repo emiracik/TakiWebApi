@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetAllDriverRatings()
     {
         var driverRatings = await _driverRatingRepository.GetAllDriverRatingsAsync();
@@ -38,6 +40,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("driver/{driverId}")]
+    [AllowAnyCaller]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsByDriverId(int driverId)
     {
         var driverRatings = await _driverRatingRepository.GetDriverRatingsByDriverIdAsync(driverId);
@@ -45,6 +48,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("driver/{driverId}/average")]
+    [AllowAnyCaller]
     public async Task<ActionResult<decimal>> GetAverageRatingByDriverId(int driverId)
     {
         var averageRating = await _driverRatingRepository.GetAverageRatingByDriverIdAsync(driverId);
@@ -66,6 +70,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("rating/{rating}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsByRatingValue(decimal rating)
     {
         if (rating < 1 || rating > 5)
@@ -78,6 +83,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetActiveDriverRatings()
     {
         var driverRatings = await _driverRatingRepository.GetActiveDriverRatingsAsync();
@@ -85,6 +91,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -97,6 +104,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalDriverRatingsCount()
     {
         var count = await _driverRatingRepository.GetTotalDriverRatingsCountAsync();
@@ -104,6 +112,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveDriverRatingsCount()
     {
         var count = await _driverRatingRepository.GetActiveDriverRatingsCountAsync();
@@ -111,6 +120,7 @@ public class DriverRatingsController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -135,6 +145,11 @@ public class DriverRatingsController : ControllerBase
             return BadRequest("Rating must be between 1 and 5.");
         }
 
+        if (!User.IsPassenger(driverRating.UserID))
+        {
+            return Forbid();
+        }
+
         try
         {
             var ratingId = await _driverRatingRepository.CreateDriverRatingAsync(driverRating);
@@ -142,13 +157,14 @@ public class DriverRatingsController : ControllerBase
             
             return CreatedAtAction(nameof(GetDriverRating), new { id = ratingId }, createdDriverRating);
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateDriverRating(int id, [FromBody] DriverRating driverRating)
     {
         if (id != driverRating.DriverRatingID)
@@ -184,13 +200,14 @@ public class DriverRatingsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteDriverRating(int id)
     {
         try
@@ -210,9 +227,9 @@ public class DriverRatingsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 }

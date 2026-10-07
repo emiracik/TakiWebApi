@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Notification>>> GetAllNotifications()
     {
         var notifications = await _notificationRepository.GetAllNotificationsAsync();
@@ -32,6 +34,10 @@ public class NotificationsController : ControllerBase
         if (notification == null)
         {
             return NotFound();
+        }
+        if (!User.IsPartyOf(notification.UserID, notification.DriverID))
+        {
+            return Forbid();
         }
 
         return Ok(notification);
@@ -60,6 +66,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Notification>>> GetActiveNotifications()
     {
         var notifications = await _notificationRepository.GetAllNotificationsAsync();
@@ -67,6 +74,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Notification>>> GetNotificationsPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -79,6 +87,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalNotificationsCount()
     {
         var count = await _notificationRepository.GetTotalNotificationsCountAsync();
@@ -86,6 +95,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveNotificationsCount()
     {
         var count = await _notificationRepository.GetTotalNotificationsCountAsync();
@@ -93,6 +103,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Notification>>> SearchNotificationsByTitle([FromQuery] string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -105,6 +116,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Notification>>> GetNotificationsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -126,6 +138,10 @@ public class NotificationsController : ControllerBase
             {
                 return NotFound();
             }
+            if (!User.IsPartyOf(existingNotification.UserID, existingNotification.DriverID))
+            {
+                return Forbid();
+            }
 
             var success = await _notificationRepository.MarkAsReadAsync(id);
             
@@ -136,9 +152,9 @@ public class NotificationsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -164,13 +180,14 @@ public class NotificationsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Notification>> CreateNotification([FromBody] Notification notification)
     {
         if (!ModelState.IsValid)
@@ -185,13 +202,14 @@ public class NotificationsController : ControllerBase
             
             return CreatedAtAction(nameof(GetNotification), new { id = notificationId }, createdNotification);
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateNotification(int id, [FromBody] Notification notification)
     {
         if (id != notification.NotificationID)
@@ -222,13 +240,14 @@ public class NotificationsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteNotification(int id)
     {
         try
@@ -248,9 +267,9 @@ public class NotificationsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
 using TakiWebApi.Services;
+using TakiWebApi.Security;
 
 namespace TakiWebApi.Controllers;
 
@@ -35,6 +36,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Trip>>> GetAllTrips()
     {
         var trips = await _tripRepository.GetAllTripsAsync();
@@ -49,6 +51,10 @@ public class TripsController : ControllerBase
         if (trip == null)
         {
             return NotFound();
+        }
+        if (!User.IsPartyOf(trip.PassengerID, trip.DriverID))
+        {
+            return Forbid();
         }
 
         return Ok(trip);
@@ -69,6 +75,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Trip>>> GetActiveTrips()
     {
         var trips = await _tripRepository.GetActiveTripsAsync();
@@ -76,6 +83,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<object>> GetTripsPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -99,6 +107,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalTripsCount()
     {
         var count = await _tripRepository.GetTotalTripsCountAsync();
@@ -106,6 +115,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveTripsCount()
     {
         var count = await _tripRepository.GetActiveTripsCountAsync();
@@ -113,6 +123,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Trip>>> GetTripsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -125,6 +136,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("payment-method/{paymentMethod}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Trip>>> GetTripsByPaymentMethod(string paymentMethod)
     {
         var trips = await _tripRepository.GetTripsByPaymentMethodAsync(paymentMethod);
@@ -132,6 +144,7 @@ public class TripsController : ControllerBase
     }
 
     [HttpGet("cost/date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<decimal>> GetTotalCostByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -177,6 +190,11 @@ public class TripsController : ControllerBase
         {
             return BadRequest("paymentMethod 'wallet' veya 'card' olmalı.");
         }
+        // Ödeme yöntemini sadece yolculuğun yolcusu seçebilir.
+        if (await TripAccessAsync(tripId, t => User.IsPassenger(t.PassengerID)) is IActionResult denied)
+        {
+            return denied;
+        }
         var ok = await _tripRepository.SetPaymentMethodAsync(tripId, method);
         return ok ? Ok(new { message = "Ödeme yöntemi kaydedildi.", paymentMethod = method })
                   : NotFound("Yolculuk bulunamadı.");
@@ -190,6 +208,10 @@ public class TripsController : ControllerBase
     [HttpPost("{tripId}/driver-finish")]
     public async Task<IActionResult> DriverFinishTrip(int tripId, [FromBody] decimal? finalCost)
     {
+        if (await TripAccessAsync(tripId, t => User.IsDriver(t.DriverID)) is IActionResult denied)
+        {
+            return denied;
+        }
         var ok = await _tripRepository.DriverFinishTripAsync(tripId, finalCost);
         if (!ok)
         {
@@ -212,6 +234,10 @@ public class TripsController : ControllerBase
     [HttpPost("{tripId}/confirm")]
     public async Task<IActionResult> ConfirmTrip(int tripId)
     {
+        if (await TripAccessAsync(tripId, t => User.IsPassenger(t.PassengerID)) is IActionResult denied)
+        {
+            return denied;
+        }
         var ok = await _tripRepository.CompleteTripAsync(tripId, null);
         if (!ok)
         {
@@ -228,6 +254,10 @@ public class TripsController : ControllerBase
     [HttpPost("{tripId}/complete")]
     public async Task<IActionResult> CompleteTrip(int tripId, [FromBody] decimal? finalCost)
     {
+        if (await TripAccessAsync(tripId, t => User.IsDriver(t.DriverID)) is IActionResult denied)
+        {
+            return denied;
+        }
         var ok = await _tripRepository.CompleteTripAsync(tripId, finalCost);
         if (!ok)
         {
@@ -235,6 +265,17 @@ public class TripsController : ControllerBase
         }
         var result = await SettleTripAsync(tripId, finalCost);
         return Ok(result);
+    }
+
+    // Yolculuk yoksa 404, çağıran yetkili değilse 403 döner; izin varsa null.
+    private async Task<IActionResult?> TripAccessAsync(int tripId, Func<Trip, bool> allowed)
+    {
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip == null)
+        {
+            return NotFound("Yolculuk bulunamadı.");
+        }
+        return User.IsAdmin() || allowed(trip) ? null : Forbid();
     }
 
     // Ücret tahsilatı — hem confirm hem complete tarafından kullanılır.

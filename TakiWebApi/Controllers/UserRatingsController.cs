@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class UserRatingsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserRating>>> GetAll()
     {
         var ratings = await _userRatingRepository.GetAllAsync();
@@ -34,6 +36,7 @@ public class UserRatingsController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
+    [AllowAnyCaller]
     public async Task<ActionResult<IEnumerable<UserRating>>> GetByUserId(int userId)
     {
         var ratings = await _userRatingRepository.GetByUserIdAsync(userId);
@@ -55,6 +58,7 @@ public class UserRatingsController : ControllerBase
     }
 
     [HttpGet("user/{userId}/average")]
+    [AllowAnyCaller]
     public async Task<ActionResult<decimal>> GetAverageByUserId(int userId)
     {
         var avg = await _userRatingRepository.GetAverageByUserIdAsync(userId);
@@ -64,6 +68,7 @@ public class UserRatingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Add([FromBody] UserRating rating)
     {
+        if (!User.IsDriver(rating.RatedByDriverID)) return Forbid();
         rating.CreatedDate = DateTime.UtcNow;
         await _userRatingRepository.AddAsync(rating);
         return Ok();

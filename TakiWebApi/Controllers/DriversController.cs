@@ -21,6 +21,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Driver>>> GetAllDrivers()
     {
         var drivers = await _driverRepository.GetAllDriversAsync();
@@ -41,6 +42,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("phone/{phoneNumber}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Driver>> GetDriverByPhoneNumber(string phoneNumber)
     {
         var driver = await _driverRepository.GetDriverByPhoneNumberAsync(phoneNumber);
@@ -54,6 +56,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("email/{email}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Driver>> GetDriverByEmail(string email)
     {
         var driver = await _driverRepository.GetDriverByEmailAsync(email);
@@ -67,6 +70,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Driver>>> GetActiveDrivers()
     {
         var drivers = await _driverRepository.GetActiveDriversAsync();
@@ -74,6 +78,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Driver>>> GetDriversPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -97,6 +102,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalDriversCount()
     {
         var count = await _driverRepository.GetTotalDriversCountAsync();
@@ -104,6 +110,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveDriversCount()
     {
         var count = await _driverRepository.GetActiveDriversCountAsync();
@@ -111,6 +118,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Driver>>> SearchDriversByName([FromQuery] string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -123,6 +131,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Driver>>> GetDriversByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -135,6 +144,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpGet("vehicle-plate/{vehiclePlate}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<Driver>>> GetDriversByVehiclePlate(string vehiclePlate)
     {
         if (string.IsNullOrWhiteSpace(vehiclePlate))

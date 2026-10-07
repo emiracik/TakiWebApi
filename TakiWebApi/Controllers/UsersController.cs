@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -21,6 +22,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<User>>> GetAllUsers()
     {
         var users = await _userRepository.GetAllUsersAsync();
@@ -36,11 +38,17 @@ public class UsersController : ControllerBase
         {
             return NotFound();
         }
+        // Kullanıcı kendi profilini, sürücüler ise yolcu bilgisini görebilir.
+        if (!User.IsPassenger(user.UserID) && !User.IsAnyDriver() && !User.IsAdmin())
+        {
+            return Forbid();
+        }
 
         return Ok(user);
     }
 
     [HttpGet("phone/{phoneNumber}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<User>> GetUserByPhoneNumber(string phoneNumber)
     {
         var user = await _userRepository.GetUserByPhoneNumberAsync(phoneNumber);
@@ -54,6 +62,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("email/{email}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<User>> GetUserByEmail(string email)
     {
         var user = await _userRepository.GetUserByEmailAsync(email);
@@ -67,6 +76,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<User>>> GetActiveUsers()
     {
         var users = await _userRepository.GetActiveUsersAsync();
@@ -74,6 +84,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<User>>> GetUsersPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -97,6 +108,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalUsersCount()
     {
         var count = await _userRepository.GetTotalUsersCountAsync();
@@ -104,6 +116,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveUsersCount()
     {
         var count = await _userRepository.GetActiveUsersCountAsync();
@@ -111,6 +124,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<User>>> SearchUsersByName([FromQuery] string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -123,6 +137,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<User>>> GetUsersByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)

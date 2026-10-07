@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -97,6 +98,10 @@ public class MatchingController : ControllerBase
             {
                 return BadRequest(ModelState);
             }
+            if (!User.IsPassenger(request.PassengerID))
+            {
+                return Forbid();
+            }
 
             _logger.LogInformation($"Finding best match for passenger {request.PassengerID}");
 
@@ -127,6 +132,11 @@ public class MatchingController : ControllerBase
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            if (!User.IsPassenger(request.PassengerID))
+            {
+                return Forbid();
             }
 
             // Calculate trip details
@@ -198,6 +208,12 @@ public class MatchingController : ControllerBase
             {
                 return NotFound("Eşleştirme talebi bulunamadı.");
             }
+            // Talebin yolcusu, atanan sürücü veya talebi kabul etmeden önce
+            // durumunu kontrol eden herhangi bir sürücü görebilir.
+            if (!User.IsPartyOf(request.PassengerID, request.DriverID) && !User.IsAnyDriver())
+            {
+                return Forbid();
+            }
 
             var response = new MatchingResponse
             {
@@ -246,6 +262,10 @@ public class MatchingController : ControllerBase
     {
         try
         {
+            if (await RequestAccessAsync(requestId, r => User.IsPartyOf(r.PassengerID, r.DriverID)) is ActionResult denied)
+            {
+                return denied;
+            }
             var response = await _matchingRepository.CancelMatchingRequestAsync(requestId);
             
             if (response.Status == MatchingStatus.Cancelled)
@@ -294,6 +314,7 @@ public class MatchingController : ControllerBase
     /// Sürücünün mevcut konum bilgisini getirir
     /// </summary>
     [HttpGet("driver/{driverId}/location")]
+    [AllowAnyCaller]
     public async Task<ActionResult<DriverLocation>> GetDriverLocation(int driverId)
     {
         try
@@ -434,6 +455,11 @@ public class MatchingController : ControllerBase
     {
         try
         {
+            // Karşı teklife sadece talebin yolcusu yanıt verebilir.
+            if (await RequestAccessAsync(requestId, r => User.IsPassenger(r.PassengerID)) is ActionResult denied)
+            {
+                return denied;
+            }
             var response = await _matchingRepository.RespondToCounterOfferAsync(requestId, true);
             if (response.Status == MatchingStatus.Accepted && response.DriverID is int driverId)
             {
@@ -456,6 +482,11 @@ public class MatchingController : ControllerBase
     {
         try
         {
+            // Karşı teklife sadece talebin yolcusu yanıt verebilir.
+            if (await RequestAccessAsync(requestId, r => User.IsPassenger(r.PassengerID)) is ActionResult denied)
+            {
+                return denied;
+            }
             var response = await _matchingRepository.RespondToCounterOfferAsync(requestId, false);
             return Ok(response);
         }
@@ -464,6 +495,17 @@ public class MatchingController : ControllerBase
             _logger.LogError(ex, $"Error rejecting counter offer for request {requestId}");
             return StatusCode(500, "Teklif reddedilirken bir hata oluştu.");
         }
+    }
+
+    // Talep yoksa 404, çağıran yetkili değilse 403 döner; izin varsa null.
+    private async Task<ActionResult?> RequestAccessAsync(int requestId, Func<MatchingRequest, bool> allowed)
+    {
+        var request = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
+        if (request == null)
+        {
+            return NotFound("Eşleştirme talebi bulunamadı.");
+        }
+        return User.IsAdmin() || allowed(request) ? null : Forbid();
     }
 
     // Kabul edilen bir talep için gerçek Trip kaydını oluşturur ve sürücüyü
@@ -533,6 +575,11 @@ public class MatchingController : ControllerBase
     {
         try
         {
+            // Bekleyen talepler (yolcu adresleri dahil) sadece sürücülere açık.
+            if (!User.IsAnyDriver() && !User.IsAdmin())
+            {
+                return Forbid();
+            }
             var requests = await _matchingRepository.GetPendingMatchingRequestsAsync();
             return Ok(requests);
         }
@@ -547,6 +594,7 @@ public class MatchingController : ControllerBase
     /// Aktif eşleştirme talepleri sayısını getirir
     /// </summary>
     [HttpGet("statistics/active-requests")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveMatchingRequestsCount()
     {
         try
@@ -565,6 +613,7 @@ public class MatchingController : ControllerBase
     /// Müsait sürücü sayısını getirir
     /// </summary>
     [HttpGet("statistics/available-drivers")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetAvailableDriversCount()
     {
         try
@@ -602,6 +651,7 @@ public class MatchingController : ControllerBase
     /// Tarih aralığında eşleştirme taleplerini getirir
     /// </summary>
     [HttpGet("requests/date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<MatchingRequest>>> GetMatchingRequestsByDateRange(
         [FromQuery] DateTime startDate, 
         [FromQuery] DateTime endDate)

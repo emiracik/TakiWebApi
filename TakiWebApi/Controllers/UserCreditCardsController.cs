@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserCreditCard>>> GetAllUserCreditCards()
     {
         var userCreditCards = await _userCreditCardRepository.GetAllUserCreditCardsAsync();
@@ -33,6 +35,10 @@ public class UserCreditCardsController : ControllerBase
         {
             return NotFound();
         }
+        if (!User.IsPassenger(userCreditCard.UserID))
+        {
+            return Forbid();
+        }
 
         return Ok(userCreditCard);
     }
@@ -45,6 +51,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet("active")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserCreditCard>>> GetActiveUserCreditCards()
     {
         var userCreditCards = await _userCreditCardRepository.GetActiveUserCreditCardsAsync();
@@ -52,6 +59,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet("paginated")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserCreditCard>>> GetUserCreditCardsPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         if (pageNumber < 1 || pageSize < 1)
@@ -64,6 +72,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet("count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetTotalUserCreditCardsCount()
     {
         var count = await _userCreditCardRepository.GetTotalUserCreditCardsCountAsync();
@@ -71,6 +80,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet("active/count")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<int>> GetActiveUserCreditCardsCount()
     {
         var count = await _userCreditCardRepository.GetActiveUserCreditCardsCountAsync();
@@ -78,6 +88,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserCreditCard>>> SearchUserCreditCardsByName([FromQuery] string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -90,6 +101,7 @@ public class UserCreditCardsController : ControllerBase
     }
 
     [HttpGet("date-range")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserCreditCard>>> GetUserCreditCardsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         if (startDate > endDate)
@@ -109,6 +121,11 @@ public class UserCreditCardsController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        if (!User.IsPassenger(userCreditCard.UserID))
+        {
+            return Forbid();
+        }
+
         // CardType is now required in the model and will be passed from the client
         try
         {
@@ -116,9 +133,9 @@ public class UserCreditCardsController : ControllerBase
             var createdUserCreditCard = await _userCreditCardRepository.GetUserCreditCardByIdAsync(cardId);
             return CreatedAtAction(nameof(GetUserCreditCard), new { id = cardId }, createdUserCreditCard);
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -143,7 +160,12 @@ public class UserCreditCardsController : ControllerBase
             {
                 return NotFound();
             }
+            if (!User.IsPassenger(existingUserCreditCard.UserID))
+            {
+                return Forbid();
+            }
 
+            userCreditCard.UserID = existingUserCreditCard.UserID;
             userCreditCard.UpdatedDate = DateTime.UtcNow;
             var success = await _userCreditCardRepository.UpdateUserCreditCardAsync(userCreditCard);
             if (!success)
@@ -152,9 +174,9 @@ public class UserCreditCardsController : ControllerBase
             }
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 
@@ -168,6 +190,10 @@ public class UserCreditCardsController : ControllerBase
             {
                 return NotFound();
             }
+            if (!User.IsPassenger(existingUserCreditCard.UserID))
+            {
+                return Forbid();
+            }
 
             var success = await _userCreditCardRepository.DeleteUserCreditCardAsync(id);
             
@@ -178,9 +204,9 @@ public class UserCreditCardsController : ControllerBase
 
             return NoContent();
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            throw;
         }
     }
 }

@@ -58,6 +58,10 @@ public class AuthController : ControllerBase
             if (passwordValid)
             {
                 _logger.LogInformation("✅ Login successful for phone: {PhoneNumber}", request.PhoneNumber);
+                if (_passwordService.NeedsRehash(user.PasswordHash))
+                {
+                    await _userRepository.UpdateUserPasswordAsync(user.UserID, _passwordService.HashPassword(request.Password));
+                }
                 var additionalClaims = new[]
                 {
                     new Claim("phone_number", user.PhoneNumber),
@@ -93,7 +97,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "💥 Error during login for phone: {PhoneNumber}", request.PhoneNumber);
-            return StatusCode(500, new { Success = false, Message = ex.Message });
+            throw;
         }
     }
     [HttpPost("google-login")]
@@ -189,7 +193,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "💥 Google login sırasında hata");
-            return StatusCode(500, new { Success = false, Message = ex.Message });
+            throw;
         }
     }
 
@@ -252,28 +256,24 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { Success = false, Message = "Driver account is not active" });
             }
 
-            // Verify password
-            bool passwordValid = false;
-            
-            if (!string.IsNullOrEmpty(driver.PasswordHash))
+            // Şifresi tanımlı olmayan sürücü giriş yapamaz; şifre yönetici
+            // tarafından atanmalı (bkz. "dotnet TakiWebApi.dll hash-password").
+            if (string.IsNullOrEmpty(driver.PasswordHash))
             {
-                // Use stored password hash
-                passwordValid = _passwordService.VerifyPassword(request.Password, driver.PasswordHash);
+                _logger.LogWarning("❌ No password set for driver phone: {PhoneNumber}", request.PhoneNumber);
+                return Unauthorized(new { Success = false, Message = "Invalid driver credentials" });
             }
-            else
-            {
-                // Fallback for demo purposes if no password hash is stored
-                // Accept: driver123, password123, their phone number, or 123456
-                var demoPasswords = new[] { "driver123", "password123", driver.PhoneNumber, "123456" };
-                passwordValid = demoPasswords.Any(p => p == request.Password);
-                
-                _logger.LogInformation("🔧 Using demo password validation for driver phone: {PhoneNumber}", request.PhoneNumber);
-            }
+
+            bool passwordValid = _passwordService.VerifyPassword(request.Password, driver.PasswordHash);
 
             if (passwordValid)
             {
                 _logger.LogInformation("✅ Driver login successful for phone: {PhoneNumber}", request.PhoneNumber);
-                
+                if (_passwordService.NeedsRehash(driver.PasswordHash))
+                {
+                    await _driverRepository.UpdateDriverPasswordAsync(driver.DriverID, _passwordService.HashPassword(request.Password));
+                }
+
                 var additionalClaims = new[]
                 {
                     new Claim("phone_number", driver.PhoneNumber),
@@ -304,9 +304,9 @@ public class AuthController : ControllerBase
             _logger.LogWarning("❌ Invalid password for driver phone: {PhoneNumber}", request.PhoneNumber);
             return Unauthorized(new { Success = false, Message = "Invalid driver credentials" });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, new { Success = false, Message = ex.Message });
+            throw;
         }
     }
 
@@ -355,9 +355,9 @@ public class AuthController : ControllerBase
                 Message = "Registration successful"
             });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, new { Success = false, Message = ex.Message });
+            throw;
         }
     }
 
@@ -388,9 +388,9 @@ public class AuthController : ControllerBase
 
             return Ok(new { Success = false, Valid = false, Message = "Invalid token" });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, new { Success = false, Message = ex.Message });
+            throw;
         }
     }
 
@@ -442,9 +442,9 @@ public class AuthController : ControllerBase
                 Message = "Driver registration successful"
             });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, new { Success = false, Message = ex.Message });
+            throw;
         }
     }
 
@@ -457,6 +457,14 @@ public class AuthController : ControllerBase
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            // Şifre sadece token sahibinin kendi hesabı için değiştirilebilir.
+            if (User.FindFirstValue("user_type") != "user" ||
+                !int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var currentUserId) ||
+                currentUserId != request.UserId)
+            {
+                return Forbid();
             }
 
             // Get user by ID
@@ -491,9 +499,9 @@ public class AuthController : ControllerBase
 
             return Ok(new { message = "Password changed successfully." });
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            throw;
         }
     }
 }

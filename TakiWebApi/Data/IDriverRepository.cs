@@ -18,4 +18,5 @@ public interface IDriverRepository
     Task<Driver> AddDriverAsync(Driver driver);
     Task<Driver> UpdateDriverAsync(Driver driver);
     Task<bool> DeleteDriverAsync(int driverId);
+    Task<bool> UpdateDriverPasswordAsync(int driverId, string newPasswordHash);
 }
