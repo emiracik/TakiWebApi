@@ -344,4 +344,38 @@ public class UserRepository : IUserRepository
         var rowsAffected = await command.ExecuteNonQueryAsync();
         return rowsAffected > 0;
     }
+
+    public async Task<bool> AnonymizeAndDeleteUserAsync(int userId)
+    {
+        // Yolculuk/ödeme kayıtları muhasebe için kalır ama artık kimliği
+        // belirlenebilir bir kişiye bağlı değildir.
+        const string sql = @"
+            UPDATE Users
+            SET FullName = N'Silinmiş Kullanıcı',
+                PhoneNumber = CONCAT('deleted-', UserID),
+                Email = NULL,
+                PasswordHash = NULL,
+                IsActive = 0,
+                IsDeleted = 1,
+                DeletedDate = @Now
+            WHERE UserID = @UserID AND IsDeleted = 0;
+
+            UPDATE UserAddresses SET IsDeleted = 1, DeletedDate = @Now
+            WHERE UserID = @UserID AND IsDeleted = 0;
+
+            UPDATE UserCreditCards SET IsDeleted = 1, DeletedDate = @Now
+            WHERE UserID = @UserID AND IsDeleted = 0;";
+
+        using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+        using var transaction = connection.BeginTransaction();
+        using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+        command.Parameters.Add("@Now", SqlDbType.DateTime2).Value = DateTime.UtcNow;
+
+        // Hiçbir satır etkilenmediyse hesap zaten silinmiş ya da yok.
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        transaction.Commit();
+        return rowsAffected > 0;
+    }
 }

@@ -18,4 +18,6 @@ public interface IUserRepository
     Task<bool> UpdateUserAsync(User user);
     Task<bool> DeleteUserAsync(int userId);
     Task<bool> UpdateUserPasswordAsync(int userId, string newPasswordHash);
+    // Hesap silme: kişisel veriyi anonimleştirir, hesabı ve adres/kartları siler.
+    Task<bool> AnonymizeAndDeleteUserAsync(int userId);
 }

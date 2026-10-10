@@ -387,4 +387,27 @@ public class DriverRepository : IDriverRepository
         var rowsAffected = await command.ExecuteNonQueryAsync();
         return rowsAffected > 0;
     }
+
+    public async Task<bool> AnonymizeAndDeleteDriverAsync(int driverId)
+    {
+        const string sql = @"
+            UPDATE Drivers
+            SET FullName = N'Silinmiş Sürücü',
+                PhoneNumber = CONCAT('deleted-', DriverID),
+                Email = NULL,
+                PasswordHash = NULL,
+                VehiclePlate = NULL,
+                IsDeleted = 1,
+                DeletedDate = @Now
+            WHERE DriverID = @DriverID AND IsDeleted = 0";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add("@DriverID", SqlDbType.Int).Value = driverId;
+        command.Parameters.Add("@Now", SqlDbType.DateTime2).Value = DateTime.UtcNow;
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
 }

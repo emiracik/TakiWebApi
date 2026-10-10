@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Services;
+using TakiWebApi.Security;
 using TakiWebApi.Data;
 using TakiWebApi.Models;
 using System.Security.Claims;
@@ -207,8 +208,11 @@ public class AuthController : ControllerBase
 
         var userId = token.UserId;
         var user = await _userRepository.GetUserByIdAsync(userId);
-        if (user == null)
+        if (user == null || user.IsDeleted || !user.IsActive)
+        {
+            await _refreshTokenRepository.DeleteRefreshTokenAsync(refreshToken);
             return Unauthorized("Kullanıcı bulunamadı.");
+        }
 
         var additionalClaims = new[]
         {
@@ -446,6 +450,38 @@ public class AuthController : ControllerBase
         {
             throw;
         }
+    }
+
+    /// <summary>
+    /// Hesap silme (App Store / Google Play zorunluluğu, KVKK): token sahibinin
+    /// kişisel verisi anonimleştirilir ve hesap kapatılır. Yolcu ve sürücü
+    /// hesapları için çalışır; geri alınamaz.
+    /// </summary>
+    [HttpDelete("account")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAccount()
+    {
+        var callerId = User.CallerId();
+        if (callerId == null)
+        {
+            return Unauthorized();
+        }
+
+        var userType = User.FindFirstValue("user_type");
+        bool deleted = userType switch
+        {
+            "user" => await _userRepository.AnonymizeAndDeleteUserAsync(callerId.Value),
+            "driver" => await _driverRepository.AnonymizeAndDeleteDriverAsync(callerId.Value),
+            _ => false
+        };
+
+        if (!deleted)
+        {
+            return NotFound(new { Success = false, Message = "Hesap bulunamadı." });
+        }
+
+        _logger.LogInformation("🗑️ Account deleted: {UserType} {Id}", userType, callerId.Value);
+        return Ok(new { Success = true, Message = "Hesabınız silindi." });
     }
 
     [HttpPut("change-password")]

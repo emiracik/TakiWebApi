@@ -19,4 +19,6 @@ public interface IDriverRepository
     Task<Driver> UpdateDriverAsync(Driver driver);
     Task<bool> DeleteDriverAsync(int driverId);
     Task<bool> UpdateDriverPasswordAsync(int driverId, string newPasswordHash);
+    // Hesap silme: kişisel veriyi anonimleştirir ve hesabı siler.
+    Task<bool> AnonymizeAndDeleteDriverAsync(int driverId);
 }
