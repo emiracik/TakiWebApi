@@ -92,7 +92,7 @@ builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IDriverEarningRepository, DriverEarningRepository>();
 
 // Register RefreshToken repository
-builder.Services.AddSingleton<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Register Matching repository - NEW MATCHING SYSTEM
 builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
@@ -154,6 +154,18 @@ app.MapGet("/health/database", async (IConfiguration config) =>
     {
         using var connection = new SqlConnection(config.GetConnectionString("SqlServerConnection"));
         await connection.OpenAsync();
+
+        // Migrations/ altındaki betikler çalıştırılmadıysa giriş çalışmaz.
+        using var check = new SqlCommand("SELECT OBJECT_ID(N'dbo.RefreshTokens', N'U')", connection);
+        if (await check.ExecuteScalarAsync() is null or DBNull)
+        {
+            return Results.Json(new
+            {
+                Status = "Unhealthy",
+                Reason = "Migration eksik: Migrations/001_RefreshTokens.sql",
+                Timestamp = DateTime.UtcNow
+            }, statusCode: 503);
+        }
         return Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow });
     }
     catch

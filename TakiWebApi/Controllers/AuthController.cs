@@ -63,22 +63,8 @@ public class AuthController : ControllerBase
                 {
                     await _userRepository.UpdateUserPasswordAsync(user.UserID, _passwordService.HashPassword(request.Password));
                 }
-                var additionalClaims = new[]
-                {
-                    new Claim("phone_number", user.PhoneNumber),
-                    new Claim("role", "user"),
-                    new Claim("email", user.Email ?? ""),
-                    new Claim("full_name", user.FullName ?? ""),
-                };
-                var token = _jwtService.GenerateToken(user.UserID.ToString(), "user", additionalClaims);
-                // Refresh token üretimi
-                var refreshToken = Guid.NewGuid().ToString();
-                await _refreshTokenRepository.SaveRefreshTokenAsync(new Models.RefreshToken
-                {
-                    Token = refreshToken,
-                    UserId = user.UserID,
-                    ExpiryDate = DateTime.UtcNow.AddDays(7)
-                });
+                var token = _jwtService.GenerateToken(user.UserID.ToString(), "user", UserClaims(user));
+                var refreshToken = await _refreshTokenRepository.IssueAsync(user.UserID, "user");
                 return Ok(new
                 {
                     Success = true,
@@ -162,21 +148,8 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { Success = false, Message = "Hesap aktif değil" });
             }
 
-            var additionalClaims = new[]
-            {
-                new Claim("phone_number", user.PhoneNumber),
-                new Claim("role", "user"),
-                new Claim("email", user.Email ?? ""),
-                new Claim("full_name", user.FullName ?? ""),
-            };
-            var token = _jwtService.GenerateToken(user.UserID.ToString(), "user", additionalClaims);
-            var refreshToken = Guid.NewGuid().ToString();
-            await _refreshTokenRepository.SaveRefreshTokenAsync(new Models.RefreshToken
-            {
-                Token = refreshToken,
-                UserId = user.UserID,
-                ExpiryDate = DateTime.UtcNow.AddDays(7)
-            });
+            var token = _jwtService.GenerateToken(user.UserID.ToString(), "user", UserClaims(user));
+            var refreshToken = await _refreshTokenRepository.IssueAsync(user.UserID, "user");
 
             return Ok(new
             {
@@ -202,36 +175,62 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
     {
-        var token = await _refreshTokenRepository.GetRefreshTokenAsync(refreshToken);
-        if (token == null)
+        // Yolcu ve sürücü token'ları aynı uçtan yenilenir; kullanılan refresh
+        // token iptal edilip yenisi verilir (rotasyon).
+        var rotated = await _refreshTokenRepository.RotateAsync(refreshToken);
+        if (rotated == null)
             return Unauthorized("Refresh token geçersiz veya süresi dolmuş.");
 
-        var userId = token.UserId;
-        var user = await _userRepository.GetUserByIdAsync(userId);
-        if (user == null || user.IsDeleted || !user.IsActive)
+        var (record, newRefreshToken) = rotated.Value;
+        string? newJwt = null;
+        if (record.SubjectType == "user")
         {
-            await _refreshTokenRepository.DeleteRefreshTokenAsync(refreshToken);
-            return Unauthorized("Kullanıcı bulunamadı.");
+            var user = await _userRepository.GetUserByIdAsync(record.SubjectId);
+            if (user != null && !user.IsDeleted && user.IsActive)
+                newJwt = _jwtService.GenerateToken(user.UserID.ToString(), "user", UserClaims(user));
+        }
+        else if (record.SubjectType == "driver")
+        {
+            var driver = await _driverRepository.GetDriverByIdAsync(record.SubjectId);
+            if (driver != null && !driver.IsDeleted)
+                newJwt = _jwtService.GenerateToken(driver.DriverID.ToString(), "driver", DriverClaims(driver));
         }
 
-        var additionalClaims = new[]
+        if (newJwt == null)
         {
-            new Claim("phone_number", user.PhoneNumber),
-            new Claim("role", "user"),
-            new Claim("email", user.Email ?? ""),
-            new Claim("full_name", user.FullName ?? "")
-        };
-        var newJwt = _jwtService.GenerateToken(user.UserID.ToString(), "user", additionalClaims);
-        var newRefreshToken = Guid.NewGuid().ToString();
-        await _refreshTokenRepository.DeleteRefreshTokenAsync(refreshToken);
-        await _refreshTokenRepository.SaveRefreshTokenAsync(new Models.RefreshToken
-        {
-            Token = newRefreshToken,
-            UserId = user.UserID,
-            ExpiryDate = DateTime.UtcNow.AddDays(7)
-        });
+            await _refreshTokenRepository.RevokeAllAsync(record.SubjectId, record.SubjectType);
+            return Unauthorized("Kullanıcı bulunamadı.");
+        }
         return Ok(new { token = newJwt, refreshToken = newRefreshToken });
     }
+
+    /// <summary>
+    /// Çıkış: cihazdaki refresh token iptal edilir (gövde: düz JSON string).
+    /// </summary>
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Logout([FromBody] string refreshToken)
+    {
+        await _refreshTokenRepository.RevokeAsync(refreshToken);
+        return Ok(new { Success = true });
+    }
+
+    private static Claim[] UserClaims(User user) => new[]
+    {
+        new Claim("phone_number", user.PhoneNumber),
+        new Claim("role", "user"),
+        new Claim("email", user.Email ?? ""),
+        new Claim("full_name", user.FullName ?? ""),
+    };
+
+    private static Claim[] DriverClaims(Driver driver) => new[]
+    {
+        new Claim("phone_number", driver.PhoneNumber),
+        new Claim("role", "driver"),
+        new Claim("email", driver.Email ?? ""),
+        new Claim("full_name", driver.FullName ?? ""),
+        new Claim("vehicle_plate", driver.VehiclePlate ?? "")
+    };
 
     [HttpPost("driver-login")]
     [AllowAnonymous]
@@ -278,21 +277,14 @@ public class AuthController : ControllerBase
                     await _driverRepository.UpdateDriverPasswordAsync(driver.DriverID, _passwordService.HashPassword(request.Password));
                 }
 
-                var additionalClaims = new[]
-                {
-                    new Claim("phone_number", driver.PhoneNumber),
-                    new Claim("role", "driver"),
-                    new Claim("email", driver.Email ?? ""),
-                    new Claim("full_name", driver.FullName ?? ""),
-                    new Claim("vehicle_plate", driver.VehiclePlate ?? "")
-                };
-
-                var token = _jwtService.GenerateToken(driver.DriverID.ToString(), "driver", additionalClaims);
+                var token = _jwtService.GenerateToken(driver.DriverID.ToString(), "driver", DriverClaims(driver));
+                var refreshToken = await _refreshTokenRepository.IssueAsync(driver.DriverID, "driver");
 
                 return Ok(new
                 {
                     Success = true,
                     Token = token,
+                    RefreshToken = refreshToken,
                     UserType = "driver",
                     DriverId = driver.DriverID,
                     PhoneNumber = driver.PhoneNumber,
@@ -480,6 +472,7 @@ public class AuthController : ControllerBase
             return NotFound(new { Success = false, Message = "Hesap bulunamadı." });
         }
 
+        await _refreshTokenRepository.RevokeAllAsync(callerId.Value, userType!);
         _logger.LogInformation("🗑️ Account deleted: {UserType} {Id}", userType, callerId.Value);
         return Ok(new { Success = true, Message = "Hesabınız silindi." });
     }
