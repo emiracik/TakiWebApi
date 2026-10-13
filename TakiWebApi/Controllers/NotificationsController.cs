@@ -61,8 +61,9 @@ public class NotificationsController : ControllerBase
     [HttpGet("user/{userId}/unread/count")]
     public async Task<ActionResult<int>> GetUnreadNotificationsCountByUserId(int userId)
     {
-        var count = await _notificationRepository.GetUnreadNotificationsCountAsync();
-        return Ok(count);
+        // Yalnızca bu kullanıcının okunmamış bildirimleri (önceden tüm sistem sayılıyordu).
+        var notifications = await _notificationRepository.GetNotificationsByUserIdAsync(userId);
+        return Ok(notifications.Count(n => !n.IsRead));
     }
 
     [HttpGet("active")]
