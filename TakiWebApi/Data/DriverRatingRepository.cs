@@ -64,7 +64,7 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
             WHERE DriverID = @DriverId AND IsDeleted = 0
@@ -89,11 +89,11 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
             WHERE UserID = @UserId AND IsDeleted = 0
-            ORDER BY RatedAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
@@ -114,11 +114,11 @@ public class DriverRatingRepository : IDriverRatingRepository
     {
         var driverRatings = new List<DriverRating>();
         const string sql = @"
-            SELECT RatingID, TripID, DriverID, UserID, Rating, RatedAt,
+            SELECT DriverRatingID, TripID, DriverID, UserID, Rating, Comment,
                    CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM DriverRatings
             WHERE TripID = @TripId AND IsDeleted = 0
-            ORDER BY RatedAt DESC";
+            ORDER BY CreatedDate DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
