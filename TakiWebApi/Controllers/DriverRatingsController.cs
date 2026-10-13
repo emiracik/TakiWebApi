@@ -12,10 +12,12 @@ namespace TakiWebApi.Controllers;
 public class DriverRatingsController : ControllerBase
 {
     private readonly IDriverRatingRepository _driverRatingRepository;
+    private readonly ITripRepository _tripRepository;
 
-    public DriverRatingsController(IDriverRatingRepository driverRatingRepository)
+    public DriverRatingsController(IDriverRatingRepository driverRatingRepository, ITripRepository tripRepository)
     {
         _driverRatingRepository = driverRatingRepository;
+        _tripRepository = tripRepository;
     }
 
     [HttpGet]
@@ -65,6 +67,15 @@ public class DriverRatingsController : ControllerBase
     [HttpGet("trip/{tripId}")]
     public async Task<ActionResult<IEnumerable<DriverRating>>> GetDriverRatingsByTripId(int tripId)
     {
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip == null)
+        {
+            return NotFound();
+        }
+        if (!User.IsPartyOf(trip.PassengerID, trip.DriverID))
+        {
+            return Forbid();
+        }
         var driverRatings = await _driverRatingRepository.GetDriverRatingsByTripIdAsync(tripId);
         return Ok(driverRatings);
     }
@@ -148,6 +159,27 @@ public class DriverRatingsController : ControllerBase
         if (!User.IsPassenger(driverRating.UserID))
         {
             return Forbid();
+        }
+
+        // Puan yalnızca yolcunun kendi tamamlanmış yolculuğundaki sürücüye,
+        // yolculuk başına bir kez verilebilir.
+        if (driverRating.TripID is not int tripId)
+        {
+            return BadRequest("TripID gerekli.");
+        }
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip == null || trip.PassengerID != driverRating.UserID || trip.DriverID != driverRating.DriverID)
+        {
+            return Forbid();
+        }
+        if (trip.Status != RideStatus.completed)
+        {
+            return BadRequest("Yalnızca tamamlanmış yolculuk puanlanabilir.");
+        }
+        var existing = await _driverRatingRepository.GetDriverRatingsByTripIdAsync(tripId);
+        if (existing.Any())
+        {
+            return Conflict("Bu yolculuk zaten puanlandı.");
         }
 
         try
