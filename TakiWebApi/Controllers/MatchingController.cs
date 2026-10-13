@@ -2,6 +2,7 @@ using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
+using TakiWebApi.Services;
 using TakiWebApi.Models;
 using System.ComponentModel.DataAnnotations;
 
@@ -15,12 +16,15 @@ public class MatchingController : ControllerBase
     private readonly IMatchingRepository _matchingRepository;
     private readonly ITripRepository _tripRepository;
     private readonly ILogger<MatchingController> _logger;
+    private readonly IPushNotificationService _push;
 
-    public MatchingController(IMatchingRepository matchingRepository, ITripRepository tripRepository, ILogger<MatchingController> logger)
+    public MatchingController(IMatchingRepository matchingRepository, ITripRepository tripRepository, ILogger<MatchingController> logger,
+        IPushNotificationService push)
     {
         _matchingRepository = matchingRepository;
         _tripRepository = tripRepository;
         _logger = logger;
+        _push = push;
     }
 
     #region Nearby Drivers and Driver Discovery
@@ -110,6 +114,17 @@ public class MatchingController : ControllerBase
             if (matchingResult == null)
             {
                 return NotFound("Uygun sürücü bulunamadı.");
+            }
+
+            if (matchingResult.DriverID is int bestDriverId)
+            {
+                _push.Notify(bestDriverId, "driver", "Yeni yolculuk talebi",
+                    $"{request.PickupAddress} → {request.DropoffAddress}",
+                    new Dictionary<string, string>
+                    {
+                        ["type"] = "new_request",
+                        ["requestId"] = matchingResult.MatchingRequestID.ToString()
+                    });
             }
 
             return Ok(matchingResult);
@@ -393,6 +408,14 @@ public class MatchingController : ControllerBase
             if (response.Status == MatchingStatus.Accepted)
             {
                 await CreateTripForAcceptedRequestAsync(response, requestId, driverId);
+                var accepted = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
+                if (accepted != null)
+                {
+                    _push.Notify(accepted.PassengerID, "user", "Sürücünüz yola çıktı",
+                        string.Join(" · ", new[] { response.DriverName, response.VehiclePlate }
+                            .Where(s => !string.IsNullOrWhiteSpace(s))),
+                        new Dictionary<string, string> { ["type"] = "request_accepted", ["requestId"] = requestId.ToString() });
+                }
             }
 
             return Ok(response);
@@ -438,6 +461,12 @@ public class MatchingController : ControllerBase
             }
 
             var response = await _matchingRepository.DriverCounterOfferAsync(driverId, requestId, amount);
+            if (existingRequest != null)
+            {
+                _push.Notify(existingRequest.PassengerID, "user", "Sürücüden karşı teklif",
+                    $"Sürücü yolculuk için ₺{amount:0} teklif etti.",
+                    new Dictionary<string, string> { ["type"] = "counter_offer", ["requestId"] = requestId.ToString() });
+            }
             return Ok(response);
         }
         catch (Exception ex)
@@ -460,7 +489,13 @@ public class MatchingController : ControllerBase
             {
                 return denied;
             }
+            var countered = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
             var response = await _matchingRepository.RespondToCounterOfferAsync(requestId, true);
+            if (countered?.DriverID is int offerDriverId && response.Status == MatchingStatus.Accepted)
+            {
+                _push.Notify(offerDriverId, "driver", "Teklifiniz kabul edildi", "Yolcuyu almak için yola çıkabilirsiniz.",
+                    new Dictionary<string, string> { ["type"] = "counter_accepted", ["requestId"] = requestId.ToString() });
+            }
             if (response.Status == MatchingStatus.Accepted && response.DriverID is int driverId)
             {
                 await CreateTripForAcceptedRequestAsync(response, requestId, driverId);
@@ -487,7 +522,13 @@ public class MatchingController : ControllerBase
             {
                 return denied;
             }
+            var countered = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
             var response = await _matchingRepository.RespondToCounterOfferAsync(requestId, false);
+            if (countered?.DriverID is int offerDriverId)
+            {
+                _push.Notify(offerDriverId, "driver", "Teklifiniz reddedildi", "Yolcu karşı teklifinizi kabul etmedi.",
+                    new Dictionary<string, string> { ["type"] = "counter_rejected", ["requestId"] = requestId.ToString() });
+            }
             return Ok(response);
         }
         catch (Exception ex)

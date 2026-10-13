@@ -2,6 +2,7 @@ using TakiWebApi.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TakiWebApi.Data;
+using TakiWebApi.Services;
 using TakiWebApi.Models;
 
 namespace TakiWebApi.Controllers;
@@ -12,7 +13,12 @@ namespace TakiWebApi.Controllers;
 public class MessagesController : ControllerBase
 {
     private readonly IMessageRepository _repo;
-    public MessagesController(IMessageRepository repo) => _repo = repo;
+    private readonly IPushNotificationService _push;
+    public MessagesController(IMessageRepository repo, IPushNotificationService push)
+    {
+        _repo = repo;
+        _push = push;
+    }
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
@@ -36,6 +42,10 @@ public class MessagesController : ControllerBase
         // Mesaj sadece token sahibi adına gönderilebilir.
         if (!User.IsMessageParty(msg.SenderID)) return Forbid();
         var id = await _repo.CreateAsync(msg);
+        // Mesajlaşmada sürücüler negatif kimlikle tutulur (driverId=6 -> -6).
+        var preview = msg.Content?.Length > 80 ? msg.Content[..80] + "…" : msg.Content ?? "";
+        _push.Notify(Math.Abs(msg.ReceiverID), msg.ReceiverID < 0 ? "driver" : "user", "Yeni mesaj", preview,
+            new Dictionary<string, string> { ["type"] = "message", ["senderId"] = msg.SenderID.ToString() });
         return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 

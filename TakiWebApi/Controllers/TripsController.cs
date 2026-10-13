@@ -16,6 +16,7 @@ public class TripsController : ControllerBase
     private readonly IJwtService _jwtService;
     private readonly IWalletRepository _walletRepository;
     private readonly IDriverEarningRepository _driverEarningRepository;
+    private readonly IPushNotificationService _push;
 
     // --- Gelir modeli anahtarı ---
     // true  = ücretin TAMAMI bize kalır (sürücü hakedişi 0 yazılır — sabit
@@ -27,8 +28,10 @@ public class TripsController : ControllerBase
     public const decimal CommissionRate = 0.20m; // %20 aracılık ücreti
 
     public TripsController(ITripRepository tripRepository, IJwtService jwtService,
-        IWalletRepository walletRepository, IDriverEarningRepository driverEarningRepository)
+        IWalletRepository walletRepository, IDriverEarningRepository driverEarningRepository,
+        IPushNotificationService push)
     {
+        _push = push;
         _tripRepository = tripRepository;
         _jwtService = jwtService;
         _walletRepository = walletRepository;
@@ -218,6 +221,12 @@ public class TripsController : ControllerBase
             return NotFound("Devam eden yolculuk bulunamadı.");
         }
         var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip?.PassengerID is int passengerId)
+        {
+            _push.Notify(passengerId, "user", "Yolculuğunuz tamamlandı",
+                $"Ücret: ₺{trip.Cost ?? finalCost ?? 0m:0.00}. Lütfen onaylayın.",
+                new Dictionary<string, string> { ["type"] = "trip_finished", ["tripId"] = tripId.ToString() });
+        }
         return Ok(new
         {
             message = "Yolcu onayı bekleniyor.",

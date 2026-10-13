@@ -94,6 +94,11 @@ builder.Services.AddScoped<IDriverEarningRepository, DriverEarningRepository>();
 // Register RefreshToken repository
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
+// Anlık bildirimler (FCM). Firebase ayarı yoksa sessizce kapalı kalır.
+builder.Services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
+
 // Register Matching repository - NEW MATCHING SYSTEM
 builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
 
@@ -156,13 +161,15 @@ app.MapGet("/health/database", async (IConfiguration config) =>
         await connection.OpenAsync();
 
         // Migrations/ altındaki betikler çalıştırılmadıysa giriş çalışmaz.
-        using var check = new SqlCommand("SELECT OBJECT_ID(N'dbo.RefreshTokens', N'U')", connection);
+        using var check = new SqlCommand(
+            "SELECT CASE WHEN OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.DeviceTokens', N'U') IS NOT NULL THEN 1 END",
+            connection);
         if (await check.ExecuteScalarAsync() is null or DBNull)
         {
             return Results.Json(new
             {
                 Status = "Unhealthy",
-                Reason = "Migration eksik: Migrations/001_RefreshTokens.sql",
+                Reason = "Migration eksik: Migrations/ altındaki betikleri (001, 002) çalıştırın",
                 Timestamp = DateTime.UtcNow
             }, statusCode: 503);
         }
