@@ -28,7 +28,7 @@ public interface ITripRepository
     Task<bool> DriverFinishTripAsync(int tripId, decimal? finalCost);
     Task<Trip?> GetActiveTripByDriverIdAsync(int driverId);
 
-    // Yolcunun seçtiği ödeme yöntemini ("wallet" | "card") yolculuğa yazar;
+    // Yolcunun seçtiği ödeme yöntemini ("wallet" | "card" | "cash") yolculuğa yazar;
     // yolculuk tamamlandığında ücret buna göre tahsil edilir.
     Task<bool> SetPaymentMethodAsync(int tripId, string paymentMethod);
 }

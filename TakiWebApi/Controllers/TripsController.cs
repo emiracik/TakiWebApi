@@ -182,16 +182,16 @@ public class TripsController : ControllerBase
     }
 
     /// <summary>
-    /// Yolcunun seçtiği ödeme yöntemini yolculuğa yazar ("wallet" | "card").
-    /// Yolculuk tamamlandığında ücret buna göre tahsil edilir.
+    /// Yolcunun seçtiği ödeme yöntemini yolculuğa yazar ("wallet" | "card" | "cash").
+    /// Yolculuk tamamlandığında ücret buna göre tahsil edilir (nakitte sürücüye elden ödenir).
     /// </summary>
     [HttpPut("{tripId}/payment-method")]
     public async Task<IActionResult> SetPaymentMethod(int tripId, [FromBody] string paymentMethod)
     {
         var method = (paymentMethod ?? "").Trim().ToLowerInvariant();
-        if (method != "wallet" && method != "card")
+        if (method != "wallet" && method != "card" && method != "cash")
         {
-            return BadRequest("paymentMethod 'wallet' veya 'card' olmalı.");
+            return BadRequest("paymentMethod 'wallet', 'card' veya 'cash' olmalı.");
         }
         // Ödeme yöntemini sadece yolculuğun yolcusu seçebilir.
         if (await TripAccessAsync(tripId, t => User.IsPassenger(t.PassengerID)) is IActionResult denied)
