@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
         try
         {
             _logger.LogInformation("🔍 Login attempt for phone: {PhoneNumber}", request.PhoneNumber);
-            var user = await _userRepository.GetUserByPhoneNumberAsync(request.PhoneNumber);
+            var user = await FindUserByPhoneAsync(request.PhoneNumber);
             if (user == null)
             {
                 _logger.LogWarning("❌ User not found for phone: {PhoneNumber}", request.PhoneNumber);
@@ -215,6 +215,27 @@ public class AuthController : ControllerBase
         return Ok(new { Success = true });
     }
 
+    // Numara veritabanında hangi biçimde kayıtlıysa bulunur (+90…, 0…, 10 hane).
+    private async Task<User?> FindUserByPhoneAsync(string phoneNumber)
+    {
+        foreach (var candidate in PhoneNumbers.Candidates(phoneNumber))
+        {
+            var user = await _userRepository.GetUserByPhoneNumberAsync(candidate);
+            if (user != null) return user;
+        }
+        return null;
+    }
+
+    private async Task<Driver?> FindDriverByPhoneAsync(string phoneNumber)
+    {
+        foreach (var candidate in PhoneNumbers.Candidates(phoneNumber))
+        {
+            var driver = await _driverRepository.GetDriverByPhoneNumberAsync(candidate);
+            if (driver != null) return driver;
+        }
+        return null;
+    }
+
     private static Claim[] UserClaims(User user) => new[]
     {
         new Claim("phone_number", user.PhoneNumber),
@@ -241,7 +262,7 @@ public class AuthController : ControllerBase
             _logger.LogInformation("🔍 Driver login attempt for phone: {PhoneNumber}", request.PhoneNumber);
             
             // Retrieve driver from database using DriverRepository
-            var driver = await _driverRepository.GetDriverByPhoneNumberAsync(request.PhoneNumber);
+            var driver = await FindDriverByPhoneAsync(request.PhoneNumber);
             _logger.LogInformation("📋 Driver found: {Found}, PasswordHash exists: {HasPassword}", 
                 driver != null, 
                 driver?.PasswordHash != null);
@@ -313,7 +334,7 @@ public class AuthController : ControllerBase
         try
         {
             // Check if user already exists
-            var existingUser = await _userRepository.GetUserByPhoneNumberAsync(request.PhoneNumber);
+            var existingUser = await FindUserByPhoneAsync(request.PhoneNumber);
             if (existingUser != null)
             {
                 return BadRequest(new { Success = false, Message = "User with this phone number already exists" });
@@ -323,7 +344,7 @@ public class AuthController : ControllerBase
             var newUser = new User
             {
                 FullName = request.FullName,
-                PhoneNumber = request.PhoneNumber,
+                PhoneNumber = PhoneNumbers.Normalize(request.PhoneNumber),
                 Email = request.Email,
                 PasswordHash = _passwordService.HashPassword(request.Password),
                 IsActive = true,
@@ -397,7 +418,7 @@ public class AuthController : ControllerBase
         try
         {
             // Check if driver already exists
-            var existingDriver = await _driverRepository.GetDriverByPhoneNumberAsync(request.PhoneNumber);
+            var existingDriver = await FindDriverByPhoneAsync(request.PhoneNumber);
             if (existingDriver != null)
             {
                 return BadRequest(new { Success = false, Message = "Driver with this phone number already exists" });
@@ -407,7 +428,7 @@ public class AuthController : ControllerBase
             var newDriver = new Driver
             {
                 FullName = request.FullName,
-                PhoneNumber = request.PhoneNumber,
+                PhoneNumber = PhoneNumbers.Normalize(request.PhoneNumber),
                 Email = request.Email,
                 PasswordHash = _passwordService.HashPassword(request.Password),
                 VehiclePlate = request.VehiclePlate,
