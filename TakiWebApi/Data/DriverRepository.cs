@@ -280,6 +280,65 @@ public class DriverRepository : IDriverRepository
         };
     }
 
+    public async Task<(string Status, string? Note)> GetApprovalAsync(int driverId)
+    {
+        try
+        {
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(
+                "SELECT ApprovalStatus, ApprovalNote FROM Drivers WHERE DriverID = @Id AND IsDeleted = 0", connection);
+            command.Parameters.AddWithValue("@Id", driverId);
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return ("Approved", null);
+            return (reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1));
+        }
+        catch (SqlException ex) when (ex.Number == 207) // sütun yok: Migrations/004 çalıştırılmamış
+        {
+            return ("Approved", null);
+        }
+    }
+
+    public async Task<bool> SetApprovalAsync(int driverId, string status, string? note)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(
+            "UPDATE Drivers SET ApprovalStatus = @S, ApprovalNote = @N, UpdatedDate = @Now WHERE DriverID = @Id", connection);
+        command.Parameters.AddWithValue("@S", status);
+        command.Parameters.AddWithValue("@N", (object?)note ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@Id", driverId);
+        await connection.OpenAsync();
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<IEnumerable<Driver>> GetDriversByApprovalAsync(string status)
+    {
+        var list = new List<Driver>();
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(
+            @"SELECT DriverID, FullName, PhoneNumber, Email, VehiclePlate, VehicleModel, VehicleColor, CreatedDate
+              FROM Drivers WHERE ApprovalStatus = @S AND IsDeleted = 0 ORDER BY CreatedDate", connection);
+        command.Parameters.AddWithValue("@S", status);
+        await connection.OpenAsync();
+        using var r = await command.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            list.Add(new Driver
+            {
+                DriverID = r.GetInt32(0),
+                FullName = r.GetString(1),
+                PhoneNumber = r.GetString(2),
+                Email = r.IsDBNull(3) ? null : r.GetString(3),
+                VehiclePlate = r.IsDBNull(4) ? null : r.GetString(4),
+                VehicleModel = r.IsDBNull(5) ? null : r.GetString(5),
+                VehicleColor = r.IsDBNull(6) ? null : r.GetString(6),
+                CreatedDate = r.GetDateTime(7),
+            });
+        }
+        return list;
+    }
+
     public async Task<Driver> AddDriverAsync(Driver driver)
     {
         const string sql = @"

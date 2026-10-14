@@ -300,6 +300,7 @@ public class AuthController : ControllerBase
 
                 var token = _jwtService.GenerateToken(driver.DriverID.ToString(), "driver", DriverClaims(driver));
                 var refreshToken = await _refreshTokenRepository.IssueAsync(driver.DriverID, "driver");
+                var (approvalStatus, approvalNote) = await _driverRepository.GetApprovalAsync(driver.DriverID);
 
                 return Ok(new
                 {
@@ -307,6 +308,8 @@ public class AuthController : ControllerBase
                     Token = token,
                     RefreshToken = refreshToken,
                     UserType = "driver",
+                    ApprovalStatus = approvalStatus,
+                    ApprovalNote = approvalNote,
                     DriverId = driver.DriverID,
                     PhoneNumber = driver.PhoneNumber,
                     FullName = driver.FullName,
@@ -440,6 +443,18 @@ public class AuthController : ControllerBase
 
             var driverId = await _driverRepository.AddDriverAsync(newDriver);
 
+            // Yeni sürücü, belgeleri onaylanana kadar talep alamaz (Migrations/004).
+            var approvalStatus = "Pending";
+            try
+            {
+                await _driverRepository.SetApprovalAsync(driverId.DriverID, "Pending", null);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 207)
+            {
+                approvalStatus = "Approved"; // sütun henüz yok
+            }
+            var registerRefreshToken = await _refreshTokenRepository.IssueAsync(driverId.DriverID, "driver");
+
             var additionalClaims = new[]
             {
                 new Claim("phone_number", request.PhoneNumber),
@@ -454,8 +469,10 @@ public class AuthController : ControllerBase
             {
                 Success = true,
                 Token = token,
+                RefreshToken = registerRefreshToken,
                 DriverId = driverId.DriverID,
                 UserType = "driver",
+                ApprovalStatus = approvalStatus,
                 Message = "Driver registration successful"
             });
         }

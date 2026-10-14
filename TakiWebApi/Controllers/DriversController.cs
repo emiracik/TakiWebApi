@@ -1,3 +1,4 @@
+using TakiWebApi.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TakiWebApi.Data;
@@ -18,6 +19,31 @@ public class DriversController : ControllerBase
     {
         _driverRepository = driverRepository;
         _jwtService = jwtService;
+    }
+
+    public record ApprovalUpdate(string Status, string? Note);
+
+    /// <summary>Sürücünün kendi onay durumu (başvuru ekranı bunu yoklar).</summary>
+    [HttpGet("{id}/approval")]
+    public async Task<IActionResult> GetApproval(int id)
+    {
+        if (!User.IsDriver(id) && !User.IsAdmin()) return Forbid();
+        var (status, note) = await _driverRepository.GetApprovalAsync(id);
+        return Ok(new { approvalStatus = status, approvalNote = note });
+    }
+
+    /// <summary>Onay bekleyen başvurular (yönetim paneli).</summary>
+    [HttpGet("pending")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetPending() =>
+        Ok(await _driverRepository.GetDriversByApprovalAsync("Pending"));
+
+    [HttpPut("{id}/approval")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> SetApproval(int id, [FromBody] ApprovalUpdate update)
+    {
+        if (update.Status is not ("Pending" or "Approved" or "Rejected")) return BadRequest("Geçersiz durum.");
+        return await _driverRepository.SetApprovalAsync(id, update.Status, update.Note) ? NoContent() : NotFound();
     }
 
     [HttpGet]

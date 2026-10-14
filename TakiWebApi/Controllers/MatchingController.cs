@@ -19,16 +19,33 @@ public class MatchingController : ControllerBase
     private readonly IPushNotificationService _push;
     private readonly IPromotionRepository _promotions;
     private readonly IConfiguration _config;
+    private readonly IDriverRepository _drivers;
 
     public MatchingController(IMatchingRepository matchingRepository, ITripRepository tripRepository, ILogger<MatchingController> logger,
-        IPushNotificationService push, IPromotionRepository promotions, IConfiguration config)
+        IPushNotificationService push, IPromotionRepository promotions, IConfiguration config, IDriverRepository drivers)
     {
+        _drivers = drivers;
         _matchingRepository = matchingRepository;
         _tripRepository = tripRepository;
         _logger = logger;
         _push = push;
         _promotions = promotions;
         _config = config;
+    }
+
+    // Onaylanmamış (belgeleri incelenmemiş) sürücü talep alamaz (Migrations/004).
+    private async Task<ActionResult?> RequireApprovedDriverAsync(int driverId)
+    {
+        var (status, note) = await _drivers.GetApprovalAsync(driverId);
+        if (status == "Approved") return null;
+        return StatusCode(403, new
+        {
+            code = "driver_not_approved",
+            approvalStatus = status,
+            message = status == "Rejected"
+                ? $"Başvurun onaylanmadı{(string.IsNullOrWhiteSpace(note) ? "." : ": " + note)}"
+                : "Hesabın inceleniyor. Belgelerin onaylanınca yolculuk almaya başlayabilirsin."
+        });
     }
 
     // Sürücü kabul ettikten bu kadar dakika sonra yolcu iptal ederse iptal ücreti uygulanır.
@@ -375,6 +392,10 @@ public class MatchingController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            if (locationRequest.IsAvailable && await RequireApprovedDriverAsync(driverId) is not null)
+            {
+                locationRequest.IsAvailable = false; // konum paylaşabilir ama müsait görünmez
+            }
             await _matchingRepository.UpdateDriverLocationAsync(driverId, locationRequest);
             
             return Ok(new { message = "Sürücü konumu başarıyla güncellendi." });
@@ -419,6 +440,10 @@ public class MatchingController : ControllerBase
     {
         try
         {
+            if (isAvailable && await RequireApprovedDriverAsync(driverId) is ActionResult notApproved)
+            {
+                return notApproved;
+            }
             await _matchingRepository.SetDriverAvailabilityAsync(driverId, isAvailable);
             
             var status = isAvailable ? "müsait" : "meşgul";
@@ -457,6 +482,10 @@ public class MatchingController : ControllerBase
     {
         try
         {
+            if (await RequireApprovedDriverAsync(driverId) is ActionResult notApproved)
+            {
+                return notApproved;
+            }
             // Check if driver is available
             var isAvailable = await _matchingRepository.IsDriverAvailableAsync(driverId);
             if (!isAvailable)
@@ -501,6 +530,10 @@ public class MatchingController : ControllerBase
             if (amount <= 0)
             {
                 return BadRequest("Geçerli bir tutar giriniz.");
+            }
+            if (await RequireApprovedDriverAsync(driverId) is ActionResult notApproved)
+            {
+                return notApproved;
             }
             var isAvailable = await _matchingRepository.IsDriverAvailableAsync(driverId);
             if (!isAvailable)
