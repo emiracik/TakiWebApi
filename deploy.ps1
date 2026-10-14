@@ -22,7 +22,7 @@ if (-not (Test-Path "$root\publish\appsettings.Production.json")) {
 }
 
 $backup = Join-Path $root ('backups\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
-robocopy $target $backup /E /XD logs /NFL /NDL /NJH /NJS | Out-Null
+robocopy $target $backup /E /XD logs App_Data /NFL /NDL /NJH /NJS | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "Yedek alınamadı (robocopy $LASTEXITCODE)." }
 Write-Host "Yedek: $backup"
 

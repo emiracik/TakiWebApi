@@ -31,6 +31,9 @@ public interface IMatchingRepository
     
     Task<MatchingResponse> CancelMatchingRequestAsync(int requestId);
 
+    // İptal nedeni ve ücreti (Migrations/003).
+    Task SetCancellationInfoAsync(int requestId, string? reason, decimal? fee);
+
     // Sürücü karşı teklif sistemi: sürücü bekleyen bir talebe kabul yerine
     // kendi fiyatını önerebilir; yolcu bunu kabul/red eder.
     Task<MatchingResponse> DriverCounterOfferAsync(int driverId, int requestId, decimal amount);

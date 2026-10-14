@@ -9,4 +9,5 @@ public interface IDriverDocumentRepository
     Task<IEnumerable<DriverDocument>> GetByDriverIdAsync(int driverId);
     Task<int> CreateAsync(DriverDocument document);
     Task<bool> DeleteAsync(int documentId);
+    Task<bool> UpdateStatusAsync(int documentId, string status, string? reviewNote);
 }

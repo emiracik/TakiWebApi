@@ -1,29 +1,49 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace TakiWebApi.Models;
 
-[Table("Promotions")]
+// dbo.Promotions (Code sütunu Migrations/003 ile eklendi).
 public class Promotion
 {
-    [Key]
-    public int PromoID { get; set; }
-
-    [Required]
-    [StringLength(50)]
-    public string Code { get; set; } = string.Empty;
-
-    [StringLength(500)]
+    public int PromotionID { get; set; }
+    public string? Code { get; set; }
+    public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
-
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal? DiscountAmount { get; set; }
-
-    public DateTime? ExpiryDate { get; set; }
-
-    public int? MaxUsageCount { get; set; }
-
-    public int UsedCount { get; set; } = 0;
-
+    public string DiscountType { get; set; } = "FixedAmount"; // Percentage | FixedAmount
+    public decimal DiscountValue { get; set; }
+    public decimal? MinimumAmount { get; set; }
+    public decimal? MaximumDiscount { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public int? UsageLimit { get; set; }
+    public int UsedCount { get; set; }
     public bool IsActive { get; set; } = true;
+
+    /// <summary>Verilen ücrete uygulanacak indirim (ücreti aşmaz).</summary>
+    public decimal DiscountFor(decimal fare)
+    {
+        if (MinimumAmount is decimal min && fare < min) return 0;
+        var discount = DiscountType.Equals("Percentage", StringComparison.OrdinalIgnoreCase)
+            ? Math.Round(fare * DiscountValue / 100m, 2)
+            : DiscountValue;
+        if (MaximumDiscount is decimal max && discount > max) discount = max;
+        return Math.Min(discount, fare);
+    }
+}
+
+public class PromotionCheckRequest
+{
+    public string Code { get; set; } = string.Empty;
+    public decimal? Fare { get; set; }
+}
+
+public class PromotionCheckResponse
+{
+    public string Code { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string DiscountType { get; set; } = string.Empty;
+    public decimal DiscountValue { get; set; }
+    public decimal? MinimumAmount { get; set; }
+    public decimal? MaximumDiscount { get; set; }
+    public DateTime EndDate { get; set; }
+    public decimal? Discount { get; set; } // Fare verildiyse hesaplanan indirim
 }

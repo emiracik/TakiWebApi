@@ -17,15 +17,23 @@ public class MatchingController : ControllerBase
     private readonly ITripRepository _tripRepository;
     private readonly ILogger<MatchingController> _logger;
     private readonly IPushNotificationService _push;
+    private readonly IPromotionRepository _promotions;
+    private readonly IConfiguration _config;
 
     public MatchingController(IMatchingRepository matchingRepository, ITripRepository tripRepository, ILogger<MatchingController> logger,
-        IPushNotificationService push)
+        IPushNotificationService push, IPromotionRepository promotions, IConfiguration config)
     {
         _matchingRepository = matchingRepository;
         _tripRepository = tripRepository;
         _logger = logger;
         _push = push;
+        _promotions = promotions;
+        _config = config;
     }
+
+    // Sürücü kabul ettikten bu kadar dakika sonra yolcu iptal ederse iptal ücreti uygulanır.
+    private int CancellationGraceMinutes => _config.GetValue("Fares:CancellationGraceMinutes", 3);
+    private decimal CancellationFee => _config.GetValue("Fares:CancellationFee", 50m);
 
     #region Nearby Drivers and Driver Discovery
 
@@ -109,11 +117,31 @@ public class MatchingController : ControllerBase
 
             _logger.LogInformation($"Finding best match for passenger {request.PassengerID}");
 
+            if (!string.IsNullOrWhiteSpace(request.PromoCode))
+            {
+                var promo = await _promotions.GetValidByCodeAsync(request.PromoCode);
+                if (promo == null)
+                {
+                    return BadRequest("Promosyon kodu geçersiz veya süresi dolmuş.");
+                }
+                if (await _promotions.HasUserUsedAsync(promo.PromotionID, request.PassengerID))
+                {
+                    return BadRequest("Bu promosyon kodunu daha önce kullandın.");
+                }
+                request.AppliedPromotion = promo;
+            }
+
             var matchingResult = await _matchingRepository.FindBestMatchAsync(request);
             
             if (matchingResult == null)
             {
                 return NotFound("Uygun sürücü bulunamadı.");
+            }
+
+            if (request.AppliedPromotion is Promotion applied && matchingResult.Discount is decimal discount)
+            {
+                await _promotions.RecordUsageAsync(applied.PromotionID, request.PassengerID,
+                    matchingResult.MatchingRequestID, discount);
             }
 
             if (matchingResult.DriverID is int bestDriverId)
@@ -273,7 +301,7 @@ public class MatchingController : ControllerBase
     /// Eşleştirme talebini iptal eder
     /// </summary>
     [HttpDelete("request/{requestId}")]
-    public async Task<ActionResult<MatchingResponse>> CancelMatchingRequest(int requestId)
+    public async Task<ActionResult<MatchingResponse>> CancelMatchingRequest(int requestId, [FromQuery] string? reason = null)
     {
         try
         {
@@ -281,10 +309,43 @@ public class MatchingController : ControllerBase
             {
                 return denied;
             }
+            var before = await _matchingRepository.GetMatchingRequestByIdAsync(requestId);
             var response = await _matchingRepository.CancelMatchingRequestAsync(requestId);
             
             if (response.Status == MatchingStatus.Cancelled)
             {
+                decimal? fee = null;
+                if (before is { Status: MatchingStatus.Accepted, DriverID: int driverId })
+                {
+                    // Sürücü yola çıkmıştı: yolculuğu kapat, sürücüyü serbest bırak, haber ver.
+                    var trip = await _tripRepository.GetActiveTripByDriverIdAsync(driverId);
+                    if (trip?.TripID is int tripId && trip.PassengerID == before.PassengerID)
+                    {
+                        await _tripRepository.CancelInProgressTripAsync(tripId);
+                    }
+                    await _matchingRepository.SetDriverAvailabilityAsync(driverId, true);
+
+                    var byPassenger = User.IsPassenger(before.PassengerID);
+                    if (byPassenger && before.AcceptedTime is DateTime accepted &&
+                        DateTime.UtcNow - accepted > TimeSpan.FromMinutes(CancellationGraceMinutes))
+                    {
+                        fee = CancellationFee;
+                    }
+                    if (byPassenger)
+                    {
+                        _push.Notify(driverId, "driver", "Yolculuk iptal edildi",
+                            "Yolcu yolculuğu iptal etti.",
+                            new Dictionary<string, string> { ["type"] = "trip_cancelled", ["requestId"] = requestId.ToString() });
+                    }
+                }
+
+                var cleanReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim()[..Math.Min(reason.Trim().Length, 200)];
+                await _matchingRepository.SetCancellationInfoAsync(requestId, cleanReason, fee);
+                response.CancellationFee = fee;
+                if (fee is decimal f)
+                {
+                    response.Message = $"Talep iptal edildi. İptal ücreti: ₺{f:0.##}";
+                }
                 return Ok(response);
             }
             

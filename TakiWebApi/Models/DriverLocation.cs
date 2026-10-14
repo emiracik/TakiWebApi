@@ -76,6 +76,12 @@ public class MatchingResponse
     // ID'si — yolculuk bitirildiğinde/tekrar açıldığında bu kayda geri
     // dönebilmek için (geçmiş, kazanç, puanlama).
     public int? TripID { get; set; }
+
+    // Uygulanan promosyon indirimi (varsa).
+    public decimal? Discount { get; set; }
+
+    // Yolcu iptalinde kesilecek iptal ücreti (varsa).
+    public decimal? CancellationFee { get; set; }
 }
 
 public class FindNearbyDriversRequest
@@ -134,6 +140,24 @@ public class CreateMatchingRequest
     public decimal? OfferedFare { get; set; }
     public string? Notes { get; set; }
     public List<int>? PreferredDrivers { get; set; }
+
+    // Ara duraklar (en fazla 2), alış → duraklar → varış sırasıyla.
+    public List<StopPoint>? Stops { get; set; }
+
+    // Promosyon kodu; geçerliyse indirim sunucuda uygulanır.
+    public string? PromoCode { get; set; }
+
+    // Controller'ın doğruladığı promosyon (istemciden okunmaz).
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Promotion? AppliedPromotion { get; set; }
+}
+
+public class StopPoint
+{
+    [StringLength(300)]
+    public string Address { get; set; } = string.Empty;
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
 }
 
 public class UpdateDriverLocationRequest

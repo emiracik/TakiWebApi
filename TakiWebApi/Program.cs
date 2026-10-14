@@ -112,6 +112,11 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<ISharedRideRepository, SharedRideRepository>();
 
+// Yeni ekranlar (Migrations/003): promosyon kodu, ileri tarihli yolculuk.
+builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
+builder.Services.AddScoped<IScheduledRideRepository, ScheduledRideRepository>();
+builder.Services.AddHostedService<ScheduledRideReminderService>();
+
 // Register JWT service
 builder.Services.AddScoped<IJwtService, JwtService>();
 
@@ -162,14 +167,14 @@ app.MapGet("/health/database", async (IConfiguration config) =>
 
         // Migrations/ altındaki betikler çalıştırılmadıysa giriş çalışmaz.
         using var check = new SqlCommand(
-            "SELECT CASE WHEN OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.DeviceTokens', N'U') IS NOT NULL THEN 1 END",
+            "SELECT CASE WHEN OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.DeviceTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.ScheduledRides', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.Trips', N'TipAmount') IS NOT NULL THEN 1 END",
             connection);
         if (await check.ExecuteScalarAsync() is null or DBNull)
         {
             return Results.Json(new
             {
                 Status = "Unhealthy",
-                Reason = "Migration eksik: Migrations/ altındaki betikleri (001, 002) çalıştırın",
+                Reason = "Migration eksik: Migrations/ altındaki betikleri (001, 002, 003) çalıştırın",
                 Timestamp = DateTime.UtcNow
             }, statusCode: 503);
         }

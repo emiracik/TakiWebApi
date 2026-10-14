@@ -22,6 +22,7 @@ public class PushNotificationService : IPushNotificationService
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IDeviceTokenRepository _deviceTokens;
+    private readonly IUserNotificationSettingRepository _settings;
     private readonly ILogger<PushNotificationService> _logger;
     private readonly string? _projectId;
     private readonly ITokenAccess? _credential;
@@ -32,6 +33,7 @@ public class PushNotificationService : IPushNotificationService
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _deviceTokens = new DeviceTokenRepository(configuration);
+        _settings = new UserNotificationSettingRepository(configuration);
 
         _projectId = configuration["Firebase:ProjectId"];
         var serviceAccountFile = configuration["Firebase:ServiceAccountFile"];
@@ -66,9 +68,30 @@ public class PushNotificationService : IPushNotificationService
         });
     }
 
+    // Yolcunun bildirim tercihleri (UserNotificationSettings). Sohbet mesajları
+    // her zaman gider; kampanya/haber ve yolculuk güncellemeleri tercihe bağlı.
+    private async Task<bool> UserAllowsAsync(int userId, IDictionary<string, string>? data)
+    {
+        var type = data != null && data.TryGetValue("type", out var t) ? t : "";
+        if (type == "message")
+            return true;
+        var setting = await _settings.GetUserNotificationSettingByUserIdAsync(userId);
+        if (setting == null)
+            return true; // varsayılan: hepsi açık
+        return type switch
+        {
+            "promo" or "campaign" => setting.AllowPromotions,
+            "news" or "announcement" => setting.AllowNews,
+            _ => setting.AllowTripUpdates,
+        };
+    }
+
     private async Task SendAsync(int subjectId, string subjectType, string title, string body,
         IDictionary<string, string>? data)
     {
+        if (subjectType == "user" && !await UserAllowsAsync(subjectId, data))
+            return;
+
         var tokens = await _deviceTokens.GetTokensAsync(subjectId, subjectType);
         if (tokens.Count == 0)
             return;

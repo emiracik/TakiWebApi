@@ -229,9 +229,17 @@ public class MatchingRepository : IMatchingRepository
 
     public async Task<MatchingResponse?> FindBestMatchAsync(CreateMatchingRequest request)
     {
-        // 1. Calculate trip distance and cost
-        var tripDistance = await CalculateDistanceAsync(
-            request.PickupLatitude, request.PickupLongitude,
+        // 1. Calculate trip distance and cost (ara duraklar varsa rota onlardan geçer)
+        var stops = (request.Stops ?? new List<StopPoint>()).Take(2).ToList();
+        var tripDistance = 0.0;
+        var (prevLat, prevLng) = (request.PickupLatitude, request.PickupLongitude);
+        foreach (var stop in stops)
+        {
+            tripDistance += await CalculateDistanceAsync(prevLat, prevLng, stop.Latitude, stop.Longitude);
+            (prevLat, prevLng) = (stop.Latitude, stop.Longitude);
+        }
+        tripDistance += await CalculateDistanceAsync(
+            prevLat, prevLng,
             request.DropoffLatitude, request.DropoffLongitude);
 
         var estimatedDuration = await EstimateArrivalTimeAsync(tripDistance);
@@ -241,6 +249,12 @@ public class MatchingRepository : IMatchingRepository
         // müsün?"), hesaplanan tarife yerine bu tutar geçerli olur.
         var isCustomOffer = request.OfferedFare.HasValue && request.OfferedFare.Value > 0;
         var estimatedCost = isCustomOffer ? request.OfferedFare!.Value : calculatedCost;
+
+        // Promosyon indirimi (teklif verilen yolculuklarda uygulanmaz).
+        var discount = !isCustomOffer && request.AppliedPromotion is Promotion promo
+            ? promo.DiscountFor(estimatedCost)
+            : 0m;
+        estimatedCost -= discount;
 
         // 2. Find nearby available drivers
         var nearbyDrivers = await FindNearbyDriversAsync(
@@ -275,7 +289,8 @@ public class MatchingRepository : IMatchingRepository
             MaxWaitTime = request.MaxWaitTime,
             MinRating = request.MinRating,
             MaxDistance = request.MaxDistance,
-            Notes = BuildNotes(request.Notes, request.VehicleType, isCustomOffer, calculatedCost),
+            Notes = BuildNotes(request.Notes, request.VehicleType, isCustomOffer, calculatedCost,
+                stops, discount > 0 ? request.AppliedPromotion?.Code : null, discount),
             Status = MatchingStatus.Pending,
             ExpiryTime = DateTime.UtcNow.AddMinutes(request.MaxWaitTime ?? 15)
         };
@@ -294,6 +309,7 @@ public class MatchingRepository : IMatchingRepository
             EstimatedCost = estimatedCost,
             EstimatedArrival = bestDriver.EstimatedArrival,
             RequestTime = createdRequest.RequestTime,
+            Discount = discount > 0 ? discount : null,
             Message = isCustomOffer
                 ? $"En uygun sürücü bulundu. Teklifiniz (₺{estimatedCost:0.##}) ile talep oluşturuldu."
                 : "En uygun sürücü bulundu ve talep oluşturuldu."
@@ -302,10 +318,26 @@ public class MatchingRepository : IMatchingRepository
 
     // request.Notes + araç sınıfı + teklif bilgisini tek bir metne paketler
     // (şema değişikliği yapmadan iz tutmak için). Format: "vehicleType=comfort;offeredFare=true;calculatedFare=230.00 | <kullanıcı notu>"
-    private static string? BuildNotes(string? userNotes, string? vehicleType, bool isCustomOffer, decimal calculatedCost)
+    // Ara duraklar: "stops=Adres@41.01,28.97^Adres2@41.02,28.98"; promosyon: "promo=KOD;discount=50.00".
+    private static string? BuildNotes(string? userNotes, string? vehicleType, bool isCustomOffer, decimal calculatedCost,
+        IReadOnlyList<StopPoint>? stops = null, string? promoCode = null, decimal discount = 0)
     {
-        var meta = $"vehicleType={(string.IsNullOrWhiteSpace(vehicleType) ? "economy" : vehicleType)};offeredFare={isCustomOffer.ToString().ToLowerInvariant()};calculatedFare={calculatedCost.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)}";
-        return string.IsNullOrWhiteSpace(userNotes) ? meta : $"{meta} | {userNotes}";
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var meta = $"vehicleType={(string.IsNullOrWhiteSpace(vehicleType) ? "economy" : vehicleType)};offeredFare={isCustomOffer.ToString().ToLowerInvariant()};calculatedFare={calculatedCost.ToString("0.00", inv)}";
+        if (promoCode != null)
+        {
+            meta += $";promo={promoCode};discount={discount.ToString("0.00", inv)}";
+        }
+        if (stops is { Count: > 0 })
+        {
+            static string Clean(string a) =>
+                new string(a.Where(c => c is not (';' or '|' or '^' or '@')).ToArray()).Trim();
+            var parts = stops.Select(s =>
+                $"{Clean(s.Address)[..Math.Min(Clean(s.Address).Length, 150)]}@{s.Latitude.ToString("0.000000", inv)},{s.Longitude.ToString("0.000000", inv)}");
+            meta += ";stops=" + string.Join("^", parts);
+        }
+        var notes = string.IsNullOrWhiteSpace(userNotes) ? meta : $"{meta} | {userNotes}";
+        return notes.Length > 1000 ? notes[..1000] : notes;
     }
 
     public async Task<MatchingResponse> AcceptMatchingRequestAsync(int driverId, int requestId)
@@ -628,6 +660,23 @@ public class MatchingRepository : IMatchingRepository
             Status = rowsAffected > 0 ? MatchingStatus.Rejected : MatchingStatus.Pending,
             Message = rowsAffected > 0 ? "Talep reddedildi." : "Talep reddedilemedi."
         };
+    }
+
+    public async Task SetCancellationInfoAsync(int requestId, string? reason, decimal? fee)
+    {
+        const string sql = @"
+            UPDATE MatchingRequests
+            SET CancelReason = @Reason, CancellationFee = @Fee
+            WHERE MatchingRequestID = @RequestId";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Reason", (object?)reason ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Fee", (object?)fee ?? DBNull.Value);
+        command.Parameters.AddWithValue("@RequestId", requestId);
+
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
     }
 
     public async Task<MatchingResponse> CancelMatchingRequestAsync(int requestId)

@@ -204,6 +204,36 @@ public class TripsController : ControllerBase
     }
 
     /// <summary>
+    /// Yolcu, tamamlanmış yolculuğa bir kez bahşiş bırakır (₺1–₺1000).
+    /// Nakitte sürücüye elden verilir; kart/cüzdan tahsilatı ödeme
+    /// entegrasyonuyla birlikte yapılacak, şimdilik tutar kaydedilir.
+    /// </summary>
+    [HttpPost("{tripId}/tip")]
+    public async Task<IActionResult> AddTip(int tripId, [FromBody] decimal amount)
+    {
+        if (amount < 1 || amount > 1000)
+        {
+            return BadRequest("Bahşiş ₺1 ile ₺1000 arasında olmalı.");
+        }
+        if (await TripAccessAsync(tripId, t => User.IsPassenger(t.PassengerID)) is IActionResult denied)
+        {
+            return denied;
+        }
+        if (!await _tripRepository.SetTipAsync(tripId, amount))
+        {
+            return Conflict("Bu yolculuğa bahşiş verilemez (tamamlanmamış ya da zaten verilmiş).");
+        }
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip?.DriverID is int driverId)
+        {
+            _push.Notify(driverId, "driver", "Bahşiş aldın",
+                $"Yolcu ₺{amount:0.##} bahşiş bıraktı. Teşekkürler!",
+                new Dictionary<string, string> { ["type"] = "tip", ["tripId"] = tripId.ToString() });
+        }
+        return Ok(new { message = "Bahşiş kaydedildi.", tipAmount = amount });
+    }
+
+    /// <summary>
     /// Sürücü "Yolculuğu Bitir" dediğinde çağrılır. Yolculuk
     /// 'awaitingConfirmation' durumuna geçer (EndTime + nihai ücret yazılır)
     /// ama ÜCRET TAHSİL EDİLMEZ — yolcunun onayı beklenir.

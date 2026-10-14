@@ -358,6 +358,42 @@ public class TripRepository : ITripRepository
         return rowsAffected > 0;
     }
 
+    public async Task<bool> CancelInProgressTripAsync(int tripId)
+    {
+        const string sql = @"
+            UPDATE Trips
+            SET Status = @Cancelled, EndTime = @Now, UpdatedDate = @Now
+            WHERE TripID = @TripId AND IsDeleted = 0 AND Status = @InProgress";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Cancelled", RideStatus.cancelled.ToString());
+        command.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@TripId", tripId);
+        command.Parameters.AddWithValue("@InProgress", RideStatus.inProgress.ToString());
+
+        await connection.OpenAsync();
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<bool> SetTipAsync(int tripId, decimal amount)
+    {
+        const string sql = @"
+            UPDATE Trips
+            SET TipAmount = @Amount, UpdatedDate = @Now
+            WHERE TripID = @TripId AND IsDeleted = 0 AND Status = @Completed AND TipAmount IS NULL";
+
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Amount", amount);
+        command.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@TripId", tripId);
+        command.Parameters.AddWithValue("@Completed", RideStatus.completed.ToString());
+
+        await connection.OpenAsync();
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
     public async Task<bool> SetPaymentMethodAsync(int tripId, string paymentMethod)
     {
         const string sql = @"

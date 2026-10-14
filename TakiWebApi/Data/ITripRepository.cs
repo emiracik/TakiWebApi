@@ -31,4 +31,10 @@ public interface ITripRepository
     // Yolcunun seçtiği ödeme yöntemini ("wallet" | "card" | "cash") yolculuğa yazar;
     // yolculuk tamamlandığında ücret buna göre tahsil edilir.
     Task<bool> SetPaymentMethodAsync(int tripId, string paymentMethod);
+
+    // Yolcu, sürücü kabul ettikten sonra iptal etti (yalnızca devam eden yolculuk).
+    Task<bool> CancelInProgressTripAsync(int tripId);
+
+    // Tamamlanmış yolculuğa bir kez bahşiş yazar (Migrations/003: Trips.TipAmount).
+    Task<bool> SetTipAsync(int tripId, decimal amount);
 }

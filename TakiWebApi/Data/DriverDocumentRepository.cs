@@ -20,14 +20,7 @@ public class DriverDocumentRepository : IDriverDocumentRepository
         using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            list.Add(new DriverDocument
-            {
-                DocumentID = reader.GetInt32(reader.GetOrdinal("DocumentID")),
-                DriverID = reader.GetInt32(reader.GetOrdinal("DriverID")),
-                DocumentType = reader.GetString(reader.GetOrdinal("DocumentType")),
-                DocumentUrl = reader.GetString(reader.GetOrdinal("DocumentUrl")),
-                UploadedDate = reader.GetDateTime(reader.GetOrdinal("UploadedDate"))
-            });
+            list.Add(Map(reader));
         }
         return list;
     }
@@ -41,14 +34,7 @@ public class DriverDocumentRepository : IDriverDocumentRepository
         using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            return new DriverDocument
-            {
-                DocumentID = reader.GetInt32(reader.GetOrdinal("DocumentID")),
-                DriverID = reader.GetInt32(reader.GetOrdinal("DriverID")),
-                DocumentType = reader.GetString(reader.GetOrdinal("DocumentType")),
-                DocumentUrl = reader.GetString(reader.GetOrdinal("DocumentUrl")),
-                UploadedDate = reader.GetDateTime(reader.GetOrdinal("UploadedDate"))
-            };
+            return Map(reader);
         }
         return null;
     }
@@ -63,14 +49,7 @@ public class DriverDocumentRepository : IDriverDocumentRepository
         using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            list.Add(new DriverDocument
-            {
-                DocumentID = reader.GetInt32(reader.GetOrdinal("DocumentID")),
-                DriverID = reader.GetInt32(reader.GetOrdinal("DriverID")),
-                DocumentType = reader.GetString(reader.GetOrdinal("DocumentType")),
-                DocumentUrl = reader.GetString(reader.GetOrdinal("DocumentUrl")),
-                UploadedDate = reader.GetDateTime(reader.GetOrdinal("UploadedDate"))
-            });
+            list.Add(Map(reader));
         }
         return list;
     }
@@ -99,5 +78,40 @@ public class DriverDocumentRepository : IDriverDocumentRepository
         await connection.OpenAsync();
         var affected = await command.ExecuteNonQueryAsync();
         return affected > 0;
+    }
+
+    public async Task<bool> UpdateStatusAsync(int documentId, string status, string? reviewNote)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(
+            "UPDATE DriverDocuments SET Status = @Status, ReviewNote = @Note WHERE DocumentID = @DocumentID", connection);
+        command.Parameters.AddWithValue("@Status", status);
+        command.Parameters.AddWithValue("@Note", (object?)reviewNote ?? DBNull.Value);
+        command.Parameters.AddWithValue("@DocumentID", documentId);
+        await connection.OpenAsync();
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
+    // Status/ReviewNote Migrations/003 ile geldi; sütun yoksa "Pending" say.
+    private static DriverDocument Map(SqlDataReader reader)
+    {
+        bool Has(string name)
+        {
+            for (var i = 0; i < reader.FieldCount; i++)
+                if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
+        return new DriverDocument
+        {
+            DocumentID = reader.GetInt32(reader.GetOrdinal("DocumentID")),
+            DriverID = reader.GetInt32(reader.GetOrdinal("DriverID")),
+            DocumentType = reader.GetString(reader.GetOrdinal("DocumentType")),
+            DocumentUrl = reader.GetString(reader.GetOrdinal("DocumentUrl")),
+            UploadedDate = reader.GetDateTime(reader.GetOrdinal("UploadedDate")),
+            Status = Has("Status") && !reader.IsDBNull(reader.GetOrdinal("Status"))
+                ? reader.GetString(reader.GetOrdinal("Status")) : "Pending",
+            ReviewNote = Has("ReviewNote") && !reader.IsDBNull(reader.GetOrdinal("ReviewNote"))
+                ? reader.GetString(reader.GetOrdinal("ReviewNote")) : null,
+        };
     }
 }
