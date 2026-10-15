@@ -9,8 +9,12 @@ public class MatchingRepository : IMatchingRepository
     private readonly string _connectionString;
     private readonly IDriverRatingRepository _driverRatingRepository;
 
-    public MatchingRepository(IConfiguration configuration, IDriverRatingRepository driverRatingRepository)
+    private readonly TakiWebApi.Services.IRouteService _routes;
+
+    public MatchingRepository(IConfiguration configuration, IDriverRatingRepository driverRatingRepository,
+        TakiWebApi.Services.IRouteService routes)
     {
+        _routes = routes;
         _connectionString = configuration.GetConnectionString("DefaultConnection") 
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         _driverRatingRepository = driverRatingRepository;
@@ -231,18 +235,10 @@ public class MatchingRepository : IMatchingRepository
     {
         // 1. Calculate trip distance and cost (ara duraklar varsa rota onlardan geçer)
         var stops = (request.Stops ?? new List<StopPoint>()).Take(2).ToList();
-        var tripDistance = 0.0;
-        var (prevLat, prevLng) = (request.PickupLatitude, request.PickupLongitude);
-        foreach (var stop in stops)
-        {
-            tripDistance += await CalculateDistanceAsync(prevLat, prevLng, stop.Latitude, stop.Longitude);
-            (prevLat, prevLng) = (stop.Latitude, stop.Longitude);
-        }
-        tripDistance += await CalculateDistanceAsync(
-            prevLat, prevLng,
-            request.DropoffLatitude, request.DropoffLongitude);
-
-        var estimatedDuration = await EstimateArrivalTimeAsync(tripDistance);
+        // Gerçek yol mesafesi (rota servisi); ulaşılamazsa kuş uçuşu × yol katsayısı.
+        var route = await EstimateRouteAsync(request);
+        var tripDistance = route.DistanceKm;
+        var estimatedDuration = route.DurationMinutes;
         var calculatedCost = await CalculateEstimatedCostAsync(tripDistance, estimatedDuration, request.VehicleType);
 
         // Teklif sistemi: yolcu kendi ücretini önerdiyse (ör. "400 TL'ye götürür
@@ -417,6 +413,15 @@ public class MatchingRepository : IMatchingRepository
         if (totalCost < minimum) totalCost = minimum;
 
         return await Task.FromResult(Math.Round(totalCost, 2));
+    }
+
+    /// <summary>Talebin alış → duraklar → varış rotası (ücret bu mesafeyle hesaplanır).</summary>
+    public Task<TakiWebApi.Services.RouteEstimate> EstimateRouteAsync(CreateMatchingRequest request)
+    {
+        var points = new List<TakiWebApi.Services.RoutePoint> { new(request.PickupLatitude, request.PickupLongitude) };
+        points.AddRange((request.Stops ?? new List<StopPoint>()).Take(2).Select(s => new TakiWebApi.Services.RoutePoint(s.Latitude, s.Longitude)));
+        points.Add(new(request.DropoffLatitude, request.DropoffLongitude));
+        return _routes.EstimateAsync(points);
     }
 
     public async Task<double> CalculateDistanceAsync(double lat1, double lng1, double lat2, double lng2)

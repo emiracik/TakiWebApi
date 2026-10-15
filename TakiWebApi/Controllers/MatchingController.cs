@@ -199,12 +199,10 @@ public class MatchingController : ControllerBase
                 return Forbid();
             }
 
-            // Calculate trip details
-            var tripDistance = await _matchingRepository.CalculateDistanceAsync(
-                request.PickupLatitude, request.PickupLongitude,
-                request.DropoffLatitude, request.DropoffLongitude);
-
-            var estimatedDuration = await _matchingRepository.EstimateArrivalTimeAsync(tripDistance);
+            // Gerçek yol mesafesi (duraklar dahil)
+            var route = await _matchingRepository.EstimateRouteAsync(request);
+            var tripDistance = route.DistanceKm;
+            var estimatedDuration = route.DurationMinutes;
             var calculatedCost = await _matchingRepository.CalculateEstimatedCostAsync(tripDistance, estimatedDuration, request.VehicleType);
             var isCustomOffer = request.OfferedFare.HasValue && request.OfferedFare.Value > 0;
             var estimatedCost = isCustomOffer ? request.OfferedFare!.Value : calculatedCost;
@@ -811,6 +809,44 @@ public class MatchingController : ControllerBase
     #endregion
 
     #region Utility Operations
+
+    public class FareEstimateRequest
+    {
+        public double PickupLatitude { get; set; }
+        public double PickupLongitude { get; set; }
+        public double DropoffLatitude { get; set; }
+        public double DropoffLongitude { get; set; }
+        public List<StopPoint>? Stops { get; set; }
+    }
+
+    /// <summary>
+    /// Talep oluşturmadan önce ücret önizlemesi: gerçek yol mesafesi, süre ve
+    /// her araç sınıfının ücreti. Talepte aynı hesap kullanılır.
+    /// </summary>
+    [HttpPost("estimate")]
+    public async Task<IActionResult> EstimateFare([FromBody] FareEstimateRequest req)
+    {
+        var route = await _matchingRepository.EstimateRouteAsync(new CreateMatchingRequest
+        {
+            PickupLatitude = req.PickupLatitude,
+            PickupLongitude = req.PickupLongitude,
+            DropoffLatitude = req.DropoffLatitude,
+            DropoffLongitude = req.DropoffLongitude,
+            Stops = req.Stops,
+        });
+        var fares = new Dictionary<string, decimal>();
+        foreach (var type in new[] { "economy", "comfort", "premium" })
+        {
+            fares[type] = await _matchingRepository.CalculateEstimatedCostAsync(route.DistanceKm, route.DurationMinutes, type);
+        }
+        return Ok(new
+        {
+            distanceKm = route.DistanceKm,
+            durationMinutes = route.DurationMinutes,
+            isRoadDistance = route.IsRoadDistance,
+            fares,
+        });
+    }
 
     /// <summary>
     /// İki nokta arasındaki mesafeyi hesaplar

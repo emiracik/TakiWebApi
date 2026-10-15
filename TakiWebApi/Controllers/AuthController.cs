@@ -33,6 +33,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -88,6 +90,7 @@ public class AuthController : ControllerBase
         }
     }
     [HttpPost("google-login")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [AllowAnonymous]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
@@ -254,6 +257,8 @@ public class AuthController : ControllerBase
     };
 
     [HttpPost("driver-login")]
+
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [AllowAnonymous]
     public async Task<IActionResult> DriverLogin([FromBody] LoginRequest request)
     {
@@ -331,6 +336,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -415,6 +422,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("driver-register")]
+
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [AllowAnonymous]
     public async Task<IActionResult> DriverRegister([FromBody] DriverRegisterRequest request)
     {
@@ -516,6 +525,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("change-password")]
+
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {

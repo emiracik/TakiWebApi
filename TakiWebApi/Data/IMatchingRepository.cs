@@ -42,6 +42,7 @@ public interface IMatchingRepository
     // Utility Operations
     Task<decimal> CalculateEstimatedCostAsync(double distanceKm, double durationMinutes, string? vehicleType = null);
     Task<double> CalculateDistanceAsync(double lat1, double lng1, double lat2, double lng2);
+    Task<TakiWebApi.Services.RouteEstimate> EstimateRouteAsync(CreateMatchingRequest request);
     Task<int> EstimateArrivalTimeAsync(double distanceKm, double avgSpeed = 30.0);
     Task<bool> IsDriverAvailableAsync(int driverId);
     Task<double> GetDriverAverageRatingAsync(int driverId);

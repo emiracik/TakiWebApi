@@ -114,6 +114,7 @@ builder.Services.AddScoped<ISharedRideRepository, SharedRideRepository>();
 
 // Yeni ekranlar (Migrations/003): promosyon kodu, ileri tarihli yolculuk.
 builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
+builder.Services.AddSingleton<IRouteService, RouteService>();
 builder.Services.AddScoped<IScheduledRideRepository, ScheduledRideRepository>();
 builder.Services.AddHostedService<ScheduledRideReminderService>();
 
@@ -122,6 +123,28 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Register Password service
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+// Giriş/kayıt uçlarına deneme sınırı: IP başına dakikada 30 istek (mobil operatörlerde çok kullanıcı aynı IP'den çıkar; token yenileme sınırsız) (şifre
+// deneme saldırılarına karşı). Aşılırsa 429 döner.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "bilinmiyor",
+            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+    options.OnRejected = async (ctx, ct) =>
+    {
+        ctx.HttpContext.Response.ContentType = "application/json";
+        await ctx.HttpContext.Response.WriteAsync(
+            "{\"success\":false,\"message\":\"Çok fazla deneme. Lütfen bir dakika sonra tekrar deneyin.\"}", ct);
+    };
+});
 
 var app = builder.Build();
 
@@ -150,6 +173,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // Add authentication and authorization middleware
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
