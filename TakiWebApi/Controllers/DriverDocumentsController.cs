@@ -130,6 +130,24 @@ public class DriverDocumentsController : ControllerBase
         if (existing == null) return NotFound();
         if (!User.IsDriver(existing.DriverID)) return Forbid();
         var success = await _repo.DeleteAsync(id);
+        if (success) DeleteStoredFile(existing.DocumentUrl);
         return success ? NoContent() : NotFound();
+    }
+
+    // Belgeler kişisel veri: kayıt silinince dosyası da diskten silinir.
+    private void DeleteStoredFile(string documentUrl)
+    {
+        if (!documentUrl.StartsWith(FilePrefix)) return;
+        var root = Path.GetFullPath(_storageRoot);
+        var fullPath = Path.GetFullPath(Path.Combine(root, documentUrl[FilePrefix.Length..]));
+        if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return;
+        try
+        {
+            System.IO.File.Delete(fullPath);
+        }
+        catch (IOException)
+        {
+            // Dosya zaten yoksa ya da kilitliyse kaydın silinmesi engellenmez.
+        }
     }
 }
