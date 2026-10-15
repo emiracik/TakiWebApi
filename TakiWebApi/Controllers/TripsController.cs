@@ -17,6 +17,7 @@ public class TripsController : ControllerBase
     private readonly IWalletRepository _walletRepository;
     private readonly IDriverEarningRepository _driverEarningRepository;
     private readonly IPushNotificationService _push;
+    private readonly IRealtimeNotifier _realtime;
 
     // --- Gelir modeli anahtarı ---
     // true  = ücretin TAMAMI bize kalır (sürücü hakedişi 0 yazılır — sabit
@@ -29,9 +30,10 @@ public class TripsController : ControllerBase
 
     public TripsController(ITripRepository tripRepository, IJwtService jwtService,
         IWalletRepository walletRepository, IDriverEarningRepository driverEarningRepository,
-        IPushNotificationService push)
+        IPushNotificationService push, IRealtimeNotifier realtime)
     {
         _push = push;
+        _realtime = realtime;
         _tripRepository = tripRepository;
         _jwtService = jwtService;
         _walletRepository = walletRepository;
@@ -258,9 +260,12 @@ public class TripsController : ControllerBase
         {
             return denied;
         }
-        return await _tripRepository.MarkPickedUpAsync(tripId)
-            ? Ok(new { pickedUpAt = DateTime.UtcNow })
-            : Conflict("Yolculuk bu aşamada değil.");
+        if (!await _tripRepository.MarkPickedUpAsync(tripId))
+        {
+            return Conflict("Yolculuk bu aşamada değil.");
+        }
+        await NotifyOtherPartyAsync(tripId, "picked_up");
+        return Ok(new { pickedUpAt = DateTime.UtcNow });
     }
 
     /// <summary>
@@ -281,6 +286,7 @@ public class TripsController : ControllerBase
             return denied;
         }
         var ok = await _tripRepository.SetPaymentMethodAsync(tripId, method);
+        if (ok) await NotifyOtherPartyAsync(tripId, "payment_method");
         return ok ? Ok(new { message = "Ödeme yöntemi kaydedildi.", paymentMethod = method })
                   : NotFound("Yolculuk bulunamadı.");
     }
@@ -365,6 +371,7 @@ public class TripsController : ControllerBase
             return NotFound("Yolculuk bulunamadı.");
         }
         var result = await SettleTripAsync(tripId, null);
+        await NotifyOtherPartyAsync(tripId, "trip_confirmed");
         return Ok(result);
     }
 
@@ -386,6 +393,19 @@ public class TripsController : ControllerBase
         }
         var result = await SettleTripAsync(tripId, finalCost);
         return Ok(result);
+    }
+
+    // Yolculuğun diğer tarafına (sürücü çağırdıysa yolcuya, yolcu çağırdıysa
+    // sürücüye) anlık güncelleme gönderir; bildirim göstermez.
+    private async Task NotifyOtherPartyAsync(int tripId, string type)
+    {
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip == null) return;
+        var data = new Dictionary<string, string> { ["tripId"] = tripId.ToString() };
+        if (User.IsDriver(trip.DriverID) && trip.PassengerID is int passengerId)
+            _realtime.Send(passengerId, "user", type, data);
+        else if (trip.DriverID is int driverId)
+            _realtime.Send(driverId, "driver", type, data);
     }
 
     // Yolculuk yoksa 404, çağıran yetkili değilse 403 döner; izin varsa null.

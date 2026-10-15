@@ -16,6 +16,8 @@ public interface IPushNotificationService
 // Firebase Cloud Messaging (HTTP v1) ile anlık bildirim. Ayar:
 //   "Firebase": { "ProjectId": "...", "ServiceAccountFile": "C:/.../firebase-sa.json" }
 // Ayar yoksa bildirim gönderilmez (uygulama normal çalışır).
+// Her bildirim, uygulama açıkken ekranın hemen yenilenmesi için SignalR'a da
+// "update" olayı olarak gider (bildirim tercihinden bağımsız).
 public class PushNotificationService : IPushNotificationService
 {
     private const string Scope = "https://www.googleapis.com/auth/firebase.messaging";
@@ -26,10 +28,12 @@ public class PushNotificationService : IPushNotificationService
     private readonly ILogger<PushNotificationService> _logger;
     private readonly string? _projectId;
     private readonly ITokenAccess? _credential;
+    private readonly IRealtimeNotifier _realtime;
 
     public PushNotificationService(IConfiguration configuration, IHttpClientFactory httpClientFactory,
-        ILogger<PushNotificationService> logger)
+        ILogger<PushNotificationService> logger, IRealtimeNotifier realtime)
     {
+        _realtime = realtime;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _deviceTokens = new DeviceTokenRepository(configuration);
@@ -52,6 +56,9 @@ public class PushNotificationService : IPushNotificationService
     public void Notify(int subjectId, string subjectType, string title, string body,
         IDictionary<string, string>? data = null)
     {
+        if (data != null && data.TryGetValue("type", out var type))
+            _realtime.Send(subjectId, subjectType, type, data);
+
         if (_credential == null)
             return;
 

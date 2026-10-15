@@ -20,10 +20,13 @@ public class MatchingController : ControllerBase
     private readonly IPromotionRepository _promotions;
     private readonly IConfiguration _config;
     private readonly IDriverRepository _drivers;
+    private readonly IRealtimeNotifier _realtime;
 
     public MatchingController(IMatchingRepository matchingRepository, ITripRepository tripRepository, ILogger<MatchingController> logger,
-        IPushNotificationService push, IPromotionRepository promotions, IConfiguration config, IDriverRepository drivers)
+        IPushNotificationService push, IPromotionRepository promotions, IConfiguration config, IDriverRepository drivers,
+        IRealtimeNotifier realtime)
     {
+        _realtime = realtime;
         _drivers = drivers;
         _matchingRepository = matchingRepository;
         _tripRepository = tripRepository;
@@ -171,6 +174,7 @@ public class MatchingController : ControllerBase
                         ["requestId"] = matchingResult.MatchingRequestID.ToString()
                     });
             }
+            _realtime.ToDrivers("pending_changed");
 
             return Ok(matchingResult);
         }
@@ -228,6 +232,7 @@ public class MatchingController : ControllerBase
             };
 
             var createdRequest = await _matchingRepository.CreateMatchingRequestAsync(matchingRequest);
+            _realtime.ToDrivers("pending_changed");
 
             var response = new MatchingResponse
             {
@@ -356,6 +361,12 @@ public class MatchingController : ControllerBase
 
                 var cleanReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim()[..Math.Min(reason.Trim().Length, 200)];
                 await _matchingRepository.SetCancellationInfoAsync(requestId, cleanReason, fee);
+                if (before != null && !User.IsPassenger(before.PassengerID))
+                {
+                    _realtime.Send(before.PassengerID, "user", "request_cancelled",
+                        new Dictionary<string, string> { ["requestId"] = requestId.ToString() });
+                }
+                _realtime.ToDrivers("pending_changed");
                 response.CancellationFee = fee;
                 if (fee is decimal f)
                 {
@@ -395,6 +406,7 @@ public class MatchingController : ControllerBase
                 locationRequest.IsAvailable = false; // konum paylaşabilir ama müsait görünmez
             }
             await _matchingRepository.UpdateDriverLocationAsync(driverId, locationRequest);
+            _realtime.DriverLocation(driverId, locationRequest.Latitude, locationRequest.Longitude);
             
             return Ok(new { message = "Sürücü konumu başarıyla güncellendi." });
         }
@@ -504,6 +516,7 @@ public class MatchingController : ControllerBase
                             .Where(s => !string.IsNullOrWhiteSpace(s))),
                         new Dictionary<string, string> { ["type"] = "request_accepted", ["requestId"] = requestId.ToString() });
                 }
+                _realtime.ToDrivers("pending_changed");
             }
 
             return Ok(response);
@@ -559,6 +572,7 @@ public class MatchingController : ControllerBase
                     $"Sürücü yolculuk için ₺{amount:0} teklif etti.",
                     new Dictionary<string, string> { ["type"] = "counter_offer", ["requestId"] = requestId.ToString() });
             }
+            _realtime.ToDrivers("pending_changed");
             return Ok(response);
         }
         catch (Exception ex)
@@ -592,6 +606,7 @@ public class MatchingController : ControllerBase
             {
                 await CreateTripForAcceptedRequestAsync(response, requestId, driverId);
             }
+            _realtime.ToDrivers("pending_changed");
             return Ok(response);
         }
         catch (Exception ex)
@@ -621,6 +636,7 @@ public class MatchingController : ControllerBase
                 _push.Notify(offerDriverId, "driver", "Teklifiniz reddedildi", "Yolcu karşı teklifinizi kabul etmedi.",
                     new Dictionary<string, string> { ["type"] = "counter_rejected", ["requestId"] = requestId.ToString() });
             }
+            _realtime.ToDrivers("pending_changed");
             return Ok(response);
         }
         catch (Exception ex)

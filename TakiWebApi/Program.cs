@@ -43,6 +43,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
+        // WebSocket isteğine header eklenemediği için SignalR token'ı
+        // sorgu parametresiyle (access_token) gönderir; yalnızca hub'da kabul et.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -97,6 +111,8 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 // Anlık bildirimler (FCM). Firebase ayarı yoksa sessizce kapalı kalır.
 builder.Services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
 builder.Services.AddHttpClient();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IRealtimeNotifier, RealtimeNotifier>();
 builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
 
 // Register Matching repository - NEW MATCHING SYSTEM
@@ -179,6 +195,7 @@ app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();
+app.MapHub<TakiWebApi.Hubs.RideHub>("/hubs/ride");
 
 // Sağlık kontrolü — yalnızca durum döner; sunucu/DB adı veya sayılar
 // dışarıya verilmez.
