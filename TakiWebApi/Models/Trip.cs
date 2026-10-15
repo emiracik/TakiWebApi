@@ -40,6 +40,13 @@ public class Trip
 
     public DateTime? EndTime { get; set; }
 
+    // Yolculuk aşamaları (Migrations/005); ayrı sorguyla doldurulur.
+    [NotMapped]
+    public DateTime? ArrivedAt { get; set; }
+
+    [NotMapped]
+    public DateTime? PickedUpAt { get; set; }
+
     [Column(TypeName = "decimal(10,2)")]
     public decimal? Cost { get; set; }
 

@@ -178,7 +178,46 @@ public class TripsController : ControllerBase
         {
             return NotFound();
         }
+        if (trip.TripID is int id)
+        {
+            (trip.ArrivedAt, trip.PickedUpAt) = await _tripRepository.GetStagesAsync(id);
+        }
         return Ok(trip);
+    }
+
+    /// <summary>Sürücü alış noktasına vardı ("Kapıdayım"); yolcuya bildirim gider.</summary>
+    [HttpPost("{tripId}/arrived")]
+    public async Task<IActionResult> MarkArrived(int tripId)
+    {
+        if (await TripAccessAsync(tripId, t => User.IsDriver(t.DriverID)) is IActionResult denied)
+        {
+            return denied;
+        }
+        if (!await _tripRepository.MarkArrivedAsync(tripId))
+        {
+            return Conflict("Yolculuk bu aşamada değil.");
+        }
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip?.PassengerID is int passengerId)
+        {
+            _push.Notify(passengerId, "user", "Sürücün kapıda",
+                $"{trip.StartAddress} adresinde seni bekliyor.",
+                new Dictionary<string, string> { ["type"] = "driver_arrived", ["tripId"] = tripId.ToString() });
+        }
+        return Ok(new { arrivedAt = DateTime.UtcNow });
+    }
+
+    /// <summary>Yolcu araca bindi; yolculuk süresi buradan başlar.</summary>
+    [HttpPost("{tripId}/picked-up")]
+    public async Task<IActionResult> MarkPickedUp(int tripId)
+    {
+        if (await TripAccessAsync(tripId, t => User.IsDriver(t.DriverID)) is IActionResult denied)
+        {
+            return denied;
+        }
+        return await _tripRepository.MarkPickedUpAsync(tripId)
+            ? Ok(new { pickedUpAt = DateTime.UtcNow })
+            : Conflict("Yolculuk bu aşamada değil.");
     }
 
     /// <summary>

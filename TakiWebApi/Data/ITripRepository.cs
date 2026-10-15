@@ -37,4 +37,9 @@ public interface ITripRepository
 
     // Tamamlanmış yolculuğa bir kez bahşiş yazar (Migrations/003: Trips.TipAmount).
     Task<bool> SetTipAsync(int tripId, decimal amount);
+
+    // Yolculuk aşamaları (Migrations/005). Sütunlar yoksa null döner.
+    Task<(DateTime? ArrivedAt, DateTime? PickedUpAt)> GetStagesAsync(int tripId);
+    Task<bool> MarkArrivedAsync(int tripId);
+    Task<bool> MarkPickedUpAsync(int tripId);
 }

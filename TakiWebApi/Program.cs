@@ -167,14 +167,14 @@ app.MapGet("/health/database", async (IConfiguration config) =>
 
         // Migrations/ altındaki betikler çalıştırılmadıysa giriş çalışmaz.
         using var check = new SqlCommand(
-            "SELECT CASE WHEN OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.DeviceTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.ScheduledRides', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.Trips', N'TipAmount') IS NOT NULL AND COL_LENGTH(N'dbo.Drivers', N'ApprovalStatus') IS NOT NULL THEN 1 END",
+            "SELECT CASE WHEN OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.DeviceTokens', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.ScheduledRides', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.Trips', N'TipAmount') IS NOT NULL AND COL_LENGTH(N'dbo.Drivers', N'ApprovalStatus') IS NOT NULL AND COL_LENGTH(N'dbo.Trips', N'ArrivedAt') IS NOT NULL THEN 1 END",
             connection);
         if (await check.ExecuteScalarAsync() is null or DBNull)
         {
             return Results.Json(new
             {
                 Status = "Unhealthy",
-                Reason = "Migration eksik: Migrations/ altındaki betikleri (001, 002, 003, 004) çalıştırın",
+                Reason = "Migration eksik: Migrations/ altındaki betikleri (001-005) çalıştırın",
                 Timestamp = DateTime.UtcNow
             }, statusCode: 503);
         }

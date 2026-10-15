@@ -376,6 +376,43 @@ public class TripRepository : ITripRepository
         return await command.ExecuteNonQueryAsync() > 0;
     }
 
+    public async Task<(DateTime? ArrivedAt, DateTime? PickedUpAt)> GetStagesAsync(int tripId)
+    {
+        try
+        {
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand("SELECT ArrivedAt, PickedUpAt FROM Trips WHERE TripID = @Id", connection);
+            command.Parameters.AddWithValue("@Id", tripId);
+            await connection.OpenAsync();
+            using var r = await command.ExecuteReaderAsync();
+            if (!await r.ReadAsync()) return (null, null);
+            static DateTime? Utc(SqlDataReader x, int i) =>
+                x.IsDBNull(i) ? null : DateTime.SpecifyKind(x.GetDateTime(i), DateTimeKind.Utc);
+            return (Utc(r, 0), Utc(r, 1));
+        }
+        catch (SqlException ex) when (ex.Number == 207)
+        {
+            return (null, null);
+        }
+    }
+
+    public Task<bool> MarkArrivedAsync(int tripId) => SetStageAsync(tripId,
+        "UPDATE Trips SET ArrivedAt = @Now, UpdatedDate = @Now WHERE TripID = @Id AND Status = @InProgress AND ArrivedAt IS NULL");
+
+    public Task<bool> MarkPickedUpAsync(int tripId) => SetStageAsync(tripId,
+        "UPDATE Trips SET PickedUpAt = @Now, ArrivedAt = ISNULL(ArrivedAt, @Now), UpdatedDate = @Now WHERE TripID = @Id AND Status = @InProgress AND PickedUpAt IS NULL");
+
+    private async Task<bool> SetStageAsync(int tripId, string sql)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@Id", tripId);
+        command.Parameters.AddWithValue("@InProgress", RideStatus.inProgress.ToString());
+        await connection.OpenAsync();
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
     public async Task<bool> SetTipAsync(int tripId, decimal amount)
     {
         const string sql = @"
