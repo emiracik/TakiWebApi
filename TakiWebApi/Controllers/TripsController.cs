@@ -207,6 +207,49 @@ public class TripsController : ControllerBase
         return Ok(new { arrivedAt = DateTime.UtcNow });
     }
 
+    /// <summary>
+    /// Yolcu gelmedi: sürücü kapıya vardıktan en az NoShowWaitMinutes dakika
+    /// sonra yolculuğu kapatır; yolcuya bekleme ücreti yansır, sürücü serbest kalır.
+    /// </summary>
+    [HttpPost("{tripId}/no-show")]
+    public async Task<IActionResult> MarkNoShow(int tripId, [FromServices] IConfiguration config,
+        [FromServices] IMatchingRepository matching)
+    {
+        if (await TripAccessAsync(tripId, t => User.IsDriver(t.DriverID)) is IActionResult denied)
+        {
+            return denied;
+        }
+        var waitMinutes = config.GetValue("Fares:NoShowWaitMinutes", 5);
+        var fee = config.GetValue("Fares:NoShowFee", 50m);
+        var (arrivedAt, pickedUpAt) = await _tripRepository.GetStagesAsync(tripId);
+        if (arrivedAt == null || pickedUpAt != null)
+        {
+            return Conflict("Önce \"Kapıdayım\" demelisin; yolcu bindiyse bu işlem yapılamaz.");
+        }
+        var waited = DateTime.UtcNow - arrivedAt.Value;
+        if (waited < TimeSpan.FromMinutes(waitMinutes))
+        {
+            var left = (int)Math.Ceiling((TimeSpan.FromMinutes(waitMinutes) - waited).TotalMinutes);
+            return Conflict($"Yolcuyu en az {waitMinutes} dakika beklemelisin ({left} dk kaldı).");
+        }
+        if (!await _tripRepository.MarkNoShowAsync(tripId, fee))
+        {
+            return Conflict("Yolculuk bu aşamada değil.");
+        }
+        var trip = await _tripRepository.GetTripByIdAsync(tripId);
+        if (trip?.DriverID is int driverId)
+        {
+            await matching.SetDriverAvailabilityAsync(driverId, true);
+        }
+        if (trip?.PassengerID is int passengerId)
+        {
+            _push.Notify(passengerId, "user", "Yolculuk iptal edildi",
+                $"Sürücün {waitMinutes} dakikadan uzun bekledi. ₺{fee:0.##} bekleme ücreti uygulandı.",
+                new Dictionary<string, string> { ["type"] = "no_show", ["tripId"] = tripId.ToString() });
+        }
+        return Ok(new { noShowFee = fee });
+    }
+
     /// <summary>Yolcu araca bindi; yolculuk süresi buradan başlar.</summary>
     [HttpPost("{tripId}/picked-up")]
     public async Task<IActionResult> MarkPickedUp(int tripId)

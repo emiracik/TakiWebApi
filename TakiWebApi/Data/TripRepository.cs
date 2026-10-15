@@ -402,6 +402,21 @@ public class TripRepository : ITripRepository
     public Task<bool> MarkPickedUpAsync(int tripId) => SetStageAsync(tripId,
         "UPDATE Trips SET PickedUpAt = @Now, ArrivedAt = ISNULL(ArrivedAt, @Now), UpdatedDate = @Now WHERE TripID = @Id AND Status = @InProgress AND PickedUpAt IS NULL");
 
+    public async Task<bool> MarkNoShowAsync(int tripId, decimal fee)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(
+            @"UPDATE Trips SET Status = @Cancelled, Cost = @Fee, EndTime = @Now, UpdatedDate = @Now
+              WHERE TripID = @Id AND Status = @InProgress AND ArrivedAt IS NOT NULL AND PickedUpAt IS NULL", connection);
+        command.Parameters.AddWithValue("@Cancelled", RideStatus.cancelled.ToString());
+        command.Parameters.AddWithValue("@Fee", fee);
+        command.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+        command.Parameters.AddWithValue("@Id", tripId);
+        command.Parameters.AddWithValue("@InProgress", RideStatus.inProgress.ToString());
+        await connection.OpenAsync();
+        return await command.ExecuteNonQueryAsync() > 0;
+    }
+
     private async Task<bool> SetStageAsync(int tripId, string sql)
     {
         using var connection = new SqlConnection(_connectionString);

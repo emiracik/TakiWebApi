@@ -42,4 +42,7 @@ public interface ITripRepository
     Task<(DateTime? ArrivedAt, DateTime? PickedUpAt)> GetStagesAsync(int tripId);
     Task<bool> MarkArrivedAsync(int tripId);
     Task<bool> MarkPickedUpAsync(int tripId);
+
+    // Yolcu gelmedi: yolculuk iptal, ücret yerine bekleme ücreti yazılır.
+    Task<bool> MarkNoShowAsync(int tripId, decimal fee);
 }
