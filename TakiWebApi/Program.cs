@@ -195,7 +195,12 @@ app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();
-app.MapHub<TakiWebApi.Hubs.RideHub>("/hubs/ride");
+// SSE kapalı: IIS yanıtı tamponladığı için el sıkışma hiç ulaşmıyor.
+// İstemci önce WebSocket'i (IIS'te "WebSocket Protocol" özelliği gerekir),
+// olmazsa LongPolling'i kullanır.
+app.MapHub<TakiWebApi.Hubs.RideHub>("/hubs/ride", options =>
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets
+        | Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling);
 
 // Sağlık kontrolü — yalnızca durum döner; sunucu/DB adı veya sayılar
 // dışarıya verilmez.
