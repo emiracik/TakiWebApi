@@ -43,7 +43,13 @@ public class DriversController : ControllerBase
     public async Task<IActionResult> SetApproval(int id, [FromBody] ApprovalUpdate update)
     {
         if (update.Status is not ("Pending" or "Approved" or "Rejected")) return BadRequest("Geçersiz durum.");
-        return await _driverRepository.SetApprovalAsync(id, update.Status, update.Note) ? NoContent() : NotFound();
+        if (!await _driverRepository.SetApprovalAsync(id, update.Status, update.Note)) return NotFound();
+        if (update.Status == "Rejected")
+        {
+            // KVKK: başvuru reddedilince adli sicil kaydı derhal imha edilir.
+            await HttpContext.RequestServices.GetRequiredService<DriverDocumentStorage>().PurgeAsync(id, "criminal_record");
+        }
+        return NoContent();
     }
 
     [HttpGet]

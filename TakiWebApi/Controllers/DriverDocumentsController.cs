@@ -64,10 +64,16 @@ public class DriverDocumentsController : ControllerBase
     /// </summary>
     [HttpPost("upload")]
     [RequestSizeLimit(MaxFileBytes + 64 * 1024)]
-    public async Task<ActionResult<DriverDocument>> Upload([FromForm] string documentType, IFormFile file)
+    public async Task<ActionResult<DriverDocument>> Upload([FromForm] string documentType, IFormFile file,
+        [FromForm] bool consent = false)
     {
         if (!User.IsAnyDriver() || User.CallerId() is not int driverId) return Forbid();
         if (!DocumentTypes.Contains(documentType)) return BadRequest("Geçersiz belge türü.");
+        // KVKK m.6: adli sicil (özel nitelikli veri) yalnızca açık rızayla işlenir.
+        if (documentType.Equals("criminal_record", StringComparison.OrdinalIgnoreCase) && !consent)
+        {
+            return BadRequest("Adli sicil kaydı için açık rıza gerekli.");
+        }
         if (file == null || file.Length == 0) return BadRequest("Dosya seçin.");
         if (file.Length > MaxFileBytes) return BadRequest("Dosya en fazla 8 MB olabilir.");
 

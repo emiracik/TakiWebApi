@@ -84,7 +84,7 @@ public class PushNotificationService : IPushNotificationService
             return true;
         var setting = await _settings.GetUserNotificationSettingByUserIdAsync(userId);
         if (setting == null)
-            return true; // varsayılan: hepsi açık
+            return type is not ("promo" or "campaign" or "news" or "announcement"); // kampanya: açık onay yoksa kapalı
         return type switch
         {
             "promo" or "campaign" => setting.AllowPromotions,

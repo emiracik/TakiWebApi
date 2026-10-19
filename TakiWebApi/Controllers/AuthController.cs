@@ -218,6 +218,15 @@ public class AuthController : ControllerBase
         return Ok(new { Success = true });
     }
 
+    // Sürücü hesabı silinirken belgeleri (adli sicil dahil) dosyalarıyla imha edilir.
+    private async Task<bool> DeleteDriverAsync(int driverId)
+    {
+        var storage = HttpContext.RequestServices.GetRequiredService<DriverDocumentStorage>();
+        var purged = await storage.PurgeAsync(driverId);
+        _logger.LogInformation("Sürücü {DriverId} hesabı silindi; {Count} belge imha edildi", driverId, purged);
+        return await _driverRepository.AnonymizeAndDeleteDriverAsync(driverId);
+    }
+
     // Numara veritabanında hangi biçimde kayıtlıysa bulunur (+90…, 0…, 10 hane).
     private async Task<User?> FindUserByPhoneAsync(string phoneNumber)
     {
@@ -339,7 +348,8 @@ public class AuthController : ControllerBase
 
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request,
+        [FromServices] IUserNotificationSettingRepository notificationSettings)
     {
         try
         {
@@ -363,6 +373,18 @@ public class AuthController : ControllerBase
             };
 
             var userId = await _userRepository.CreateUserAsync(newUser);
+
+            // KVKK: kampanya/duyuru iletileri yalnızca açık onayla (varsayılan kapalı).
+            await notificationSettings.CreateUserNotificationSettingAsync(new UserNotificationSetting
+            {
+                UserID = userId,
+                AllowTripUpdates = true,
+                AllowPromotions = request.MarketingConsent,
+                AllowNews = request.MarketingConsent,
+                CreatedDate = DateTime.UtcNow,
+            });
+            _logger.LogInformation("Kayıt onayları: kullanıcı {UserId}, 18+ beyanı {Age}, kampanya onayı {Marketing}",
+                userId, request.AgeConfirmed, request.MarketingConsent);
 
             var additionalClaims = new[]
             {
@@ -510,7 +532,7 @@ public class AuthController : ControllerBase
         bool deleted = userType switch
         {
             "user" => await _userRepository.AnonymizeAndDeleteUserAsync(callerId.Value),
-            "driver" => await _driverRepository.AnonymizeAndDeleteDriverAsync(callerId.Value),
+            "driver" => await DeleteDriverAsync(callerId.Value),
             _ => false
         };
 
@@ -601,6 +623,10 @@ public class RegisterRequest
     public string PhoneNumber { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string Password { get; set; } = string.Empty;
+
+    // KVKK / kullanım koşulları onayları (kayıt ekranındaki kutular).
+    public bool AgeConfirmed { get; set; }
+    public bool MarketingConsent { get; set; }
 }
 
 public class ValidateTokenRequest

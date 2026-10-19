@@ -131,6 +131,8 @@ builder.Services.AddScoped<ISharedRideRepository, SharedRideRepository>();
 // Yeni ekranlar (Migrations/003): promosyon kodu, ileri tarihli yolculuk.
 builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
 builder.Services.AddSingleton<IRouteService, RouteService>();
+builder.Services.AddSingleton<DriverDocumentStorage>();
+builder.Services.AddHostedService<DataRetentionService>();
 builder.Services.AddScoped<IScheduledRideRepository, ScheduledRideRepository>();
 builder.Services.AddHostedService<ScheduledRideReminderService>();
 

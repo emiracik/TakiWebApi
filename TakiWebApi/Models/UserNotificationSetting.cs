@@ -11,7 +11,7 @@ public class UserNotificationSetting
 
     public int? UserID { get; set; }
 
-    public bool AllowPromotions { get; set; } = true;
+    public bool AllowPromotions { get; set; } = false; // KVKK: açık onay olmadan kapalı
 
     public bool AllowTripUpdates { get; set; } = true;
 
