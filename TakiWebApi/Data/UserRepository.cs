@@ -270,7 +270,8 @@ public class UserRepository : IUserRepository
 
         command.Parameters.AddWithValue("@FullName", user.FullName ?? string.Empty);
         command.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber ?? string.Empty);
-        command.Parameters.AddWithValue("@Email", user.Email ?? string.Empty);
+        // Boş e-posta NULL saklanır (silme/anonimleştirme ile aynı).
+        command.Parameters.AddWithValue("@Email", string.IsNullOrWhiteSpace(user.Email) ? DBNull.Value : user.Email);
         command.Parameters.AddWithValue("@PasswordHash", (object?)user.PasswordHash ?? DBNull.Value);
         command.Parameters.AddWithValue("@IsActive", user.IsActive);
         command.Parameters.AddWithValue("@CreatedDate", user.CreatedDate);
@@ -298,7 +299,8 @@ public class UserRepository : IUserRepository
         command.Parameters.AddWithValue("@UserID", user.UserID);
         command.Parameters.AddWithValue("@FullName", user.FullName ?? string.Empty);
         command.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber ?? string.Empty);
-        command.Parameters.AddWithValue("@Email", user.Email ?? string.Empty);
+        // Boş e-posta NULL saklanır (silme/anonimleştirme ile aynı).
+        command.Parameters.AddWithValue("@Email", string.IsNullOrWhiteSpace(user.Email) ? DBNull.Value : user.Email);
         command.Parameters.AddWithValue("@IsActive", user.IsActive);
         command.Parameters.AddWithValue("@UpdatedDate", DateTime.UtcNow);
 

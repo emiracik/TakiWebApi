@@ -548,6 +548,49 @@ public class AuthController : ControllerBase
         return Ok(new { Success = true, Message = "Hesabınız silindi." });
     }
 
+    /// <summary>
+    /// Yolcu kendi ad soyadını ve e-postasını günceller (KVKK m.11 düzeltme
+    /// hakkı). Telefon numarası doğrulama gerektirdiği için buradan değişmez.
+    /// </summary>
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        if (User.FindFirstValue("user_type") != "user" || User.CallerId() is not int userId)
+        {
+            return Forbid();
+        }
+        var fullName = request.FullName?.Trim();
+        var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+        if (string.IsNullOrEmpty(fullName) || fullName.Length < 2 || fullName.Length > 100)
+        {
+            return BadRequest(new { Success = false, Message = "Ad soyad 2-100 karakter olmalı." });
+        }
+        if (email != null && (email.Length > 150 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email)))
+        {
+            return BadRequest(new { Success = false, Message = "Geçerli bir e-posta adresi gir." });
+        }
+
+        var user = await _userRepository.GetUserByIdAsync(userId);
+        if (user == null || user.IsDeleted)
+        {
+            return NotFound(new { Success = false, Message = "Hesap bulunamadı." });
+        }
+        if (email != null && !string.Equals(email, user.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            var other = await _userRepository.GetUserByEmailAsync(email);
+            if (other != null && other.UserID != userId)
+            {
+                return Conflict(new { Success = false, Message = "Bu e-posta başka bir hesapta kayıtlı." });
+            }
+        }
+
+        user.FullName = fullName;
+        user.Email = email;
+        await _userRepository.UpdateUserAsync(user);
+        return Ok(new { Success = true, User = new { Id = user.UserID.ToString(), Name = user.FullName, user.Email, Phone = user.PhoneNumber } });
+    }
+
     [HttpPut("change-password")]
 
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
