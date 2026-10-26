@@ -370,7 +370,7 @@ public class TripsController : ControllerBase
             message = "Yolcu onayı bekleniyor.",
             awaitingConfirmation = true,
             fare = trip?.Cost ?? finalCost ?? 0m,
-            paymentMethod = (trip?.PaymentMethod ?? "card").ToLowerInvariant()
+            paymentMethod = (trip?.PaymentMethod ?? "cash").ToLowerInvariant()
         });
     }
 
@@ -444,7 +444,7 @@ public class TripsController : ControllerBase
     {
         var trip = await _tripRepository.GetTripByIdAsync(tripId);
         var fare = trip?.Cost ?? finalCost ?? 0m;
-        var method = (trip?.PaymentMethod ?? "card").ToLowerInvariant();
+        var method = (trip?.PaymentMethod ?? "cash").ToLowerInvariant();
         bool walletCharged = false;
         bool walletShort = false;
 
