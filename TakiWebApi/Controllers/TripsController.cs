@@ -187,6 +187,26 @@ public class TripsController : ControllerBase
         return Ok(trip);
     }
 
+    /// <summary>
+    /// Yolcunun devam eden (ya da onayını bekleyen) yolculuğu, aşama
+    /// zamanlarıyla. Yolcu uygulaması aşamaları ve bitişi buradan izler;
+    /// sürücü uç noktası yolcuya kapalıdır (yetki filtresi).
+    /// </summary>
+    [HttpGet("passenger/{passengerId}/active")]
+    public async Task<ActionResult<Trip>> GetActiveTripForPassenger(int passengerId)
+    {
+        var trip = await _tripRepository.GetActiveTripByPassengerIdAsync(passengerId);
+        if (trip == null)
+        {
+            return NotFound();
+        }
+        if (trip.TripID is int id)
+        {
+            (trip.ArrivedAt, trip.PickedUpAt) = await _tripRepository.GetStagesAsync(id);
+        }
+        return Ok(trip);
+    }
+
     /// <summary>Sürücü alış noktasına vardı ("Kapıdayım"); yolcuya bildirim gider.</summary>
     [HttpPost("{tripId}/arrived")]
     public async Task<IActionResult> MarkArrived(int tripId)

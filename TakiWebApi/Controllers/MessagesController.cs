@@ -41,6 +41,10 @@ public class MessagesController : ControllerBase
     {
         // Mesaj sadece token sahibi adına gönderilebilir.
         if (!User.IsMessageParty(msg.SenderID)) return Forbid();
+        // Gönderim zamanı ve okundu bilgisi istemciden alınmaz: telefon saati
+        // yanlış olabilir, alan hiç gelmezse de SQL tarih taşması (500) olurdu.
+        msg.SentAt = DateTime.UtcNow;
+        msg.IsRead = false;
         var id = await _repo.CreateAsync(msg);
         // Mesajlaşmada sürücüler negatif kimlikle tutulur (driverId=6 -> -6).
         var preview = msg.Content?.Length > 80 ? msg.Content[..80] + "…" : msg.Content ?? "";

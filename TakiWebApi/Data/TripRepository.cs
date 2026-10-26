@@ -464,20 +464,27 @@ public class TripRepository : ITripRepository
         return rowsAffected > 0;
     }
 
-    public async Task<Trip?> GetActiveTripByDriverIdAsync(int driverId)
+    public Task<Trip?> GetActiveTripByDriverIdAsync(int driverId) =>
+        GetActiveTripAsync("DriverID", driverId);
+
+    public Task<Trip?> GetActiveTripByPassengerIdAsync(int passengerId) =>
+        GetActiveTripAsync("PassengerID", passengerId);
+
+    // column yalnızca yukarıdaki iki sabit değerden gelir (SQL'e kullanıcı girdisi girmez).
+    private async Task<Trip?> GetActiveTripAsync(string column, int id)
     {
         // "Aktif" = hâlâ devam ediyor VEYA sürücü bitirdi ama yolcu onayı bekleniyor.
-        const string sql = @"
+        var sql = $@"
             SELECT TOP 1 TripID, PassengerID, DriverID, StartAddress, EndAddress, StartLatitude, StartLongitude,
                 EndLatitude, EndLongitude, StartTime, EndTime, Cost, PaymentMethod, Distance, Status,
                 CreatedBy, CreatedDate, UpdatedBy, UpdatedDate, DeletedBy, DeletedDate, IsDeleted
             FROM Trips
-            WHERE DriverID = @DriverId AND Status IN (@InProgress, @Awaiting) AND IsDeleted = 0
+            WHERE {column} = @Id AND Status IN (@InProgress, @Awaiting) AND IsDeleted = 0
             ORDER BY StartTime DESC";
 
         using var connection = new SqlConnection(_connectionString);
         using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@DriverId", driverId);
+        command.Parameters.AddWithValue("@Id", id);
         command.Parameters.AddWithValue("@InProgress", RideStatus.inProgress.ToString());
         command.Parameters.AddWithValue("@Awaiting", RideStatus.awaitingConfirmation.ToString());
 
