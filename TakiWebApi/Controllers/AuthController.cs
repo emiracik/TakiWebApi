@@ -542,6 +542,8 @@ public class AuthController : ControllerBase
         }
 
         await _refreshTokenRepository.RevokeAllAsync(callerId.Value, userType!);
+        await HttpContext.RequestServices.GetRequiredService<IDeviceTokenRepository>()
+            .DeleteAllForSubjectAsync(callerId.Value, userType!);
         _logger.LogInformation("🗑️ Account deleted: {UserType} {Id}", userType, callerId.Value);
         return Ok(new { Success = true, Message = "Hesabınız silindi." });
     }

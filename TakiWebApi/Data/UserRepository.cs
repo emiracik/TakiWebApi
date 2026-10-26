@@ -364,7 +364,9 @@ public class UserRepository : IUserRepository
             WHERE UserID = @UserID AND IsDeleted = 0;
 
             UPDATE UserCreditCards SET IsDeleted = 1, DeletedDate = @Now
-            WHERE UserID = @UserID AND IsDeleted = 0;";
+            WHERE UserID = @UserID AND IsDeleted = 0;
+
+            DELETE FROM UserNotificationSettings WHERE UserID = @UserID;";
 
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();

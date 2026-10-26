@@ -6,5 +6,7 @@ public interface IDeviceTokenRepository
     // sahibine taşınır.
     Task UpsertAsync(string token, int subjectId, string subjectType, string? platform);
     Task DeleteAsync(string token);
+    // Hesap silinince o hesaba bağlı tüm cihaz token'ları kaldırılır.
+    Task DeleteAllForSubjectAsync(int subjectId, string subjectType);
     Task<IReadOnlyList<string>> GetTokensAsync(int subjectId, string subjectType);
 }

@@ -45,6 +45,17 @@ public class DeviceTokenRepository : IDeviceTokenRepository
         await command.ExecuteNonQueryAsync();
     }
 
+    public async Task DeleteAllForSubjectAsync(int subjectId, string subjectType)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        using var command = new SqlCommand(
+            "DELETE FROM DeviceTokens WHERE SubjectId = @SubjectId AND SubjectType = @SubjectType", connection);
+        command.Parameters.Add("@SubjectId", SqlDbType.Int).Value = subjectId;
+        command.Parameters.Add("@SubjectType", SqlDbType.VarChar, 10).Value = subjectType;
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
+    }
+
     public async Task<IReadOnlyList<string>> GetTokensAsync(int subjectId, string subjectType)
     {
         var tokens = new List<string>();
